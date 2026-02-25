@@ -5,14 +5,16 @@ public class Main {
 
         Scanner sc = new Scanner(System.in);
 
+        System.out.println("=== TESTE VS CODE JAVA ===");
+
         System.out.print("Digite seu nome: ");
         String nome = sc.nextLine();
 
-        System.out.print("Digite sua idade: ");
-        int idade = sc.nextInt();
+        System.out.print("Digite um número: ");
+        int numero = sc.nextInt();
 
-        System.out.println("Nome: " + nome);
-        System.out.println("Idade: " + idade);
+        Aluno a1 = new Aluno(nome,numero);
+        a1.dobro();
 
         sc.close();
     }
