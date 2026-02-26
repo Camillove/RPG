@@ -1,23 +1,25 @@
+
+
 public class Monsters {
     //Definição das variavei padrões dos montros
     String name;
     int life;
     int damage;
-    int coin;
-    int xp;
+    int dropCoin;
+    int dropXp;
     int speed;
     int resistance;
 
-    public Monsters(String name, int life, int damage, int coin, int xp, int speed,int resistance) {
+    public Monsters(String name, int life, int damage, int dropCoin, int dropXp, int speed,int resistance) {
         this.name = name;
         this.life = life;
         this.damage = damage;
-        this.coin = coin;
-        this.xp = xp;
+        this.dropCoin = dropCoin;
+        this.dropXp = dropXp;
         this.speed = speed;
         this.resistance = resistance;
     }
-    public void atacar(Monsters alvo) {
+    public void atack(Character alvo) {
 
         int danoFinal = this.damage - alvo.resistance;
 

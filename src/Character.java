@@ -1,3 +1,5 @@
+import java.util.Random;
+
 public class Character {
     String name;
     int life;
@@ -6,7 +8,8 @@ public class Character {
     int damage;
     int speed;
     int inventory;
-    public Character(String name, int life, int damage, int resistance, int speed) {
+    Sword sword;
+    public Character(String name, int life, int damage, int resistance, int speed,Sword sword) {
         this.name = name;
         this.life = life;
         this.damage = damage;
@@ -14,23 +17,64 @@ public class Character {
         this.speed = speed;
         this.coin = 0;
         this.inventory = 0;
+        this.sword = sword;
     }
-    public void atacar(Character alvo) {
+    
+public void atack(Monsters alvo) {
 
-        int danoFinal = this.damage - alvo.resistance;
+    System.out.println("\n" + this.name + " atacou " + alvo.name + "!");
 
-        if (danoFinal < 0) {
-            danoFinal = 0;
+    int danoFinal = sword.calcularDano(this.damage) - alvo.resistance;
+
+    if (danoFinal < 0) {
+        danoFinal = 0;
+    }
+
+    alvo.life -= danoFinal;
+
+    System.out.println("Causou " + danoFinal + " de dano!");
+
+    if (alvo.life <= 0) {
+        alvo.life = 0;
+        System.out.println(alvo.name + " morreu!");
+    } else {
+        System.out.println(alvo.name + " agora tem " + alvo.life + " de vida.");
+    }
+}
+    
+    public void atack(Monsters[] alvos){
+        for (Monsters alvo : alvos) {
+
+            int danoFinal = this.damage - alvos.length;
+
+            if (danoFinal < 0) {
+                danoFinal = 0;
+            }
+
+            alvo.life -= danoFinal;
+
+            System.out.println(this.name + " atacou " + alvo.name + " causando " + danoFinal + " de dano!");
+
+            if (alvo.life <= 0) {
+                System.out.println(alvo.name + " morreu!");
+            } else {
+                System.out.println(alvo.name + " agora tem " + alvo.life + " de vida.");
+            }
         }
 
-        alvo.life -= danoFinal;
+    }
+    
+    public boolean fugir() {
+        Random random = new Random();
+        int dado = random.nextInt(20) + 1;
 
-        System.out.println(this.name + " atacou " + alvo.name + " causando " + danoFinal + " de dano!");
-
-        if (alvo.life <= 0) {
-            System.out.println(alvo.name + " morreu!");
+        if (dado > 18) {
+            System.out.println("Você fugiu!!");
+            return true;
         } else {
-            System.out.println(alvo.name + " agora tem " + alvo.life + " de vida.");
+            System.out.println("Você não conseguiu fugir!");
+            return false;
         }
     }
+
 }
