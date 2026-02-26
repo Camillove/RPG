@@ -10,7 +10,7 @@ public class Sword {
         this.type = type;
     }
 
-    public int calcularDano(int danoBase) {
+    public int calcularDano() {
 
         java.util.Random random = new java.util.Random();
         int danoTotal = 0;
@@ -19,7 +19,7 @@ public class Sword {
 
             for (int i = 0; i < 2; i++) {
 
-                int danoFinal = danoBase + this.damage;
+                int danoFinal = this.damage;
                 int dado = random.nextInt(20) + 1;
 
                 if (dado == 20) {
@@ -33,7 +33,7 @@ public class Sword {
 
         else if (name.equals("Katana")) {
 
-            int danoFinal = danoBase + this.damage;
+            int danoFinal = this.damage;
             int dado = random.nextInt(20) + 1;
 
             int multiplicadorCritico = 2;
@@ -55,7 +55,7 @@ public class Sword {
 
         else if (name.equals("Espada Longa")) {
 
-            int danoFinal = danoBase + this.damage;
+            int danoFinal = this.damage;
             int dado = random.nextInt(20) + 1;
 
             int chanceCritico = 20; 
@@ -78,7 +78,7 @@ public class Sword {
 
         else {
 
-            int danoFinal = danoBase + this.damage;
+            int danoFinal = this.damage;
             int dado = random.nextInt(20) + 1;
 
             if (dado == 20) {

@@ -5,14 +5,12 @@ public class Character {
     int life;
     int coin;
     int resistance;
-    int damage;
     int speed;
     int inventory;
     Sword sword;
-    public Character(String name, int life, int damage, int resistance, int speed,Sword sword) {
+    public Character(String name, int life, int resistance, int speed,Sword sword) {
         this.name = name;
         this.life = life;
-        this.damage = damage;
         this.resistance = resistance;
         this.speed = speed;
         this.coin = 0;
@@ -24,7 +22,7 @@ public void atack(Monsters alvo) {
 
     System.out.println("\n" + this.name + " atacou " + alvo.name + "!");
 
-    int danoFinal = sword.calcularDano(this.damage) - alvo.resistance;
+    int danoFinal = sword.calcularDano() - alvo.resistance;
 
     if (danoFinal < 0) {
         danoFinal = 0;
@@ -45,7 +43,7 @@ public void atack(Monsters alvo) {
     public void atack(Monsters[] alvos){
         for (Monsters alvo : alvos) {
 
-            int danoFinal = this.damage - alvos.length;
+            int danoFinal = sword.damage - alvos.length;
 
             if (danoFinal < 0) {
                 danoFinal = 0;

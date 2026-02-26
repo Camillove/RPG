@@ -8,7 +8,7 @@ public class Main {
         Sword katana = new Sword("Katana", 5, "Rara");
         Scanner sc = new Scanner(System.in);
 
-        Character heroi = new Character("Herói", 30, 6, 0, 10,katana);
+        Character heroi = new Character("Herói", 30, 0, 10,katana);
         Goblin goblin = new Goblin("Goblin Sombrio");
 
         System.out.println("⚔ BATALHA COMEÇOU ⚔");
