@@ -3,54 +3,47 @@ import java.util.Scanner;
 public class Main {
 
     public static void main(String[] args) {
-        
-        
+
         Sword katana = new Sword("Katana", 5, "Rara");
+        Character heroi = new Character("Herói", 20, 0, 10, katana);
+
         Scanner sc = new Scanner(System.in);
 
-        Character heroi = new Character("Herói", 30, 0, 10,katana);
-        Goblin goblin = new Goblin("Goblin Sombrio");
+        System.out.println("=== MODO FARM INFINITO DE GOBLINS ===");
 
-        System.out.println("⚔ BATALHA COMEÇOU ⚔");
+        while (heroi.life > 0 && heroi.nivel < 10) {
 
-        while (heroi.life > 0 && goblin.life > 0) {
+            Goblin goblin = new Goblin("Goblin");
 
-            System.out.println("\nSua vida: " + heroi.life);
-            System.out.println("Vida do inimigo: " + goblin.life);
+            System.out.println("\nUm novo Goblin apareceu!");
 
-            System.out.println("1 - Atacar");
-            System.out.println("2 - Fugir");
+            while (goblin.life > 0 && heroi.life > 0) {
 
-            int escolha = sc.nextInt();
-            switch (escolha) {
+                System.out.println("\nSua vida: " + heroi.life+"/"+heroi.maxLife);
+                System.out.println("Vida do Goblin: " + goblin.life+"/"+goblin.maxLife);
 
-                case 1:
+                System.out.println("1 - Atacar");
+                int escolha = sc.nextInt();
+
+                if (escolha == 1) {
                     heroi.atack(goblin);
-                    break;
+                }
 
-                case 2:
-                    if (heroi.fugir()) {
-                        break;
-                    }
-                    break;
-
-                default:
-                    System.out.println("Opção inválida!");
-                    break;
+                if (goblin.life > 0) {
+                    goblin.atack(heroi);
+                }
             }
 
-            if (goblin.life > 0) {
-                goblin.atack(heroi);
+            if (heroi.life > 0) {
+                System.out.println("Você derrotou o Goblin!");
+                heroi.earnXp(goblin.dropXp); 
+                heroi.coin += 5;
+
+                System.out.println("Moedas atuais: " + heroi.coin);
+                System.out.println("Nivel atual: " + heroi.nivel);
             }
         }
 
-        if (heroi.life <= 0) {
-            System.out.println("Você morreu... Fim de jogo.");
-        } else if (goblin.life <= 0) {
-            System.out.println("Você venceu!");
-            heroi.coin += goblin.dropCoin;
-            System.out.println("Você ganhou " + goblin.dropCoin + " moedas!");
-        }
 
         sc.close();
     }
