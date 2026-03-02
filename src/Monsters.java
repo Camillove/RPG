@@ -57,7 +57,7 @@ public class Monsters {
 // Todos os outros atributos já são padrão.
 class Goblin extends Monsters {
 
-    public Goblin(String name) {
+    public Goblin() {
 
         // name
         // life
@@ -66,7 +66,7 @@ class Goblin extends Monsters {
         // dropXp
         // speed
         // resistance
-        super(name, 8, 2, 3, 2, 20, 0);
+        super("Goblin", 8, 2, 3, 2, 20, 0);
     }
 }
 
@@ -77,10 +77,10 @@ class Goblin extends Monsters {
 // Versão mais forte do goblin normal
 class Goblin_exp extends Monsters {
 
-    public Goblin_exp(String name) {
+    public Goblin_exp() {
 
         // Mais vida, mais dano, mais recompensa
-        super(name, 12, 3, 5, 4, 18, 0);
+        super("Goblin Experiente", 12, 3, 5, 4, 18, 0);
     }
 }
 
@@ -91,12 +91,12 @@ class Goblin_exp extends Monsters {
 // Inimigo mais forte da dungeon
 class Goblin_boss extends Monsters {
 
-    public Goblin_boss(String name) {
+    public Goblin_boss() {
 
         // Muito mais vida
         // Mais dano
         // Possui resistência (reduz dano recebido)
         // Dropa mais moedas e XP
-        super(name, 25, 5, 10, 10, 16, 4);
+        super("Bazinga", 25, 5, 10, 10, 16, 4);
     }
 }
