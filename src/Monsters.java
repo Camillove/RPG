@@ -1,19 +1,21 @@
-// CLASSE BASE DOS MONSTROS
-// ========================
+import java.util.ArrayList;
+import java.util.List;
+
 public class Monsters {
 
-    String name;
-    int life;
-    int maxLife;
-    int damage;
-    int dropCoin;
-    int dropXp;
-    int speed;
-    int resistance;
-    public Monsters(String name, int life, int damage, int dropCoin, int dropXp, int speed, int resistance) {
+    private String name;
+    private int life;
+    private int maxLife;
+    private int damage;
+    private int dropCoin;
+    private int dropXp;
+    private int speed;
+    private int resistance;
+
+    public Monsters(String name, int life, int damage,int dropCoin, int dropXp,int speed, int resistance) {
         this.name = name;
-        this.life = life;        // Vida atual começa cheia
-        this.maxLife = life;     // Vida máxima igual à vida inicial
+        this.life = life;
+        this.maxLife = life;
         this.damage = damage;
         this.dropCoin = dropCoin;
         this.dropXp = dropXp;
@@ -21,82 +23,80 @@ public class Monsters {
         this.resistance = resistance;
     }
 
-    // Método de ataque contra o personagem
-    public void atack(Character alvo) {
+    // GETTERS
+    public String getName() { return name; }
+    public int getLife() { return life; }
+    public int getMaxLife() { return maxLife; }
+    public int getDamage() { return damage; }
+    public int getDropCoin() { return dropCoin; }
+    public int getDropXp() { return dropXp; }
+    public int getSpeed() { return speed; }
+    public int getResistance() { return resistance; }
 
-        // Calcula o dano final considerando a resistência do personagem
-        int danoFinal = this.damage - alvo.resistance;
+    public void setLife(int life) {
+        if (life < 0) life = 0;
+        if (life > maxLife) life = maxLife;
+        this.life = life;
+    }
 
-        // Impede que o dano seja negativo
-        if (danoFinal < 0) {
-            danoFinal = 0;
-        }
+    public void attack(Character alvo) {
 
-        // Aplica o dano
-        alvo.life -= danoFinal;
+        int danoFinal = Math.max(0, this.damage - alvo.getResistance());
 
-        System.out.println(this.name + " atacou " + alvo.name +
-                           " causando " + danoFinal + " de dano!");
+        alvo.setLife(alvo.getLife() - danoFinal);
 
-        // Verifica se o personagem morreu
-        if (alvo.life <= 0) {
-            alvo.life = 0;
-            System.out.println(alvo.name + " morreu!");
+        System.out.println(this.name + " atacou " + alvo.getName() +
+                " causando " + danoFinal + " de dano!");
+
+        if (alvo.getLife() <= 0) {
+            System.out.println(alvo.getName() + " morreu!");
         } else {
-            System.out.println(alvo.name + " agora tem " +
-                               alvo.life + "/" + alvo.maxLife + " de vida.");
+            System.out.println(alvo.getName() + " agora tem " +
+                    alvo.getLife() + "/" + alvo.getMaxLife() + " de vida.");
         }
+    }
+
+    // CRIADORES DE MONSTROS
+    public static List<Monsters> criarGoblins(int quantidade) {
+        List<Monsters> lista = new ArrayList<>();
+        for (int i = 0; i < quantidade; i++) {
+            lista.add(new Goblin());
+        }
+        return lista;
+    }
+
+    public static List<Monsters> criarGoblinsExp(int quantidade) {
+        List<Monsters> lista = new ArrayList<>();
+        for (int i = 0; i < quantidade; i++) {
+            lista.add(new GoblinExp());
+        }
+        return lista;
+    }
+
+    public static List<Monsters> criarGoblinBoss(int quantidade) {
+        List<Monsters> lista = new ArrayList<>();
+        for (int i = 0; i < quantidade; i++) {
+            lista.add(new GoblinBoss());
+        }
+        return lista;
     }
 }
 
-
-// ========================
-// GOBLIN NORMAL
-// ========================
-// Só permite definir o nome.
-// Todos os outros atributos já são padrão.
+// CLASSES FILHAS
 class Goblin extends Monsters {
-
     public Goblin() {
-
-        // name
-        // life
-        // damage
-        // dropCoin
-        // dropXp
-        // speed
-        // resistance
         super("Goblin", 8, 2, 3, 2, 20, 0);
     }
 }
 
-
-// ========================
-// GOBLIN EXPERIENTE
-// ========================
-// Versão mais forte do goblin normal
-class Goblin_exp extends Monsters {
-
-    public Goblin_exp() {
-
-        // Mais vida, mais dano, mais recompensa
+class GoblinExp extends Monsters {
+    public GoblinExp() {
         super("Goblin Experiente", 12, 3, 5, 4, 18, 0);
     }
 }
 
-
-// ========================
-// GOBLIN BOSS
-// ========================
-// Inimigo mais forte da dungeon
-class Goblin_boss extends Monsters {
-
-    public Goblin_boss() {
-
-        // Muito mais vida
-        // Mais dano
-        // Possui resistência (reduz dano recebido)
-        // Dropa mais moedas e XP
+class GoblinBoss extends Monsters {
+    public GoblinBoss() {
         super("Bazinga", 25, 5, 10, 10, 16, 4);
     }
 }

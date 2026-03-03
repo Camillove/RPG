@@ -1,18 +1,20 @@
 import java.util.ArrayList;
+import java.util.List;
 
 public class Inventory {
 
-    int maxSpace = 20;
-    int usedSpace = 0;
-
-    ArrayList<Item> items = new ArrayList<>();
+    private int maxSpace = 20;
+    private int usedSpace = 0;
+    private List<Item> items = new ArrayList<>();
 
     public boolean addItem(Item item) {
 
-        if (usedSpace + item.size <= maxSpace) {
+        if (item == null) return false;
+
+        if (usedSpace + item.getSize() <= maxSpace) {
             items.add(item);
-            usedSpace += item.size;
-            System.out.println(item.name + " foi adicionado!");
+            usedSpace += item.getSize();
+            System.out.println(item.getName() + " foi adicionado!");
             return true;
         } else {
             System.out.println("Inventário cheio!");
@@ -30,14 +32,37 @@ public class Inventory {
         }
 
         for (Item item : items) {
-            System.out.println("- " + item.name + " (Espaço: " + item.size + ")");
+            System.out.println("- " + item.getName() + 
+                               " (Espaço: " + item.getSize() + ")");
         }
 
         System.out.println("Espaço usado: " + usedSpace + "/" + maxSpace);
     }
 
     public void increaseSpace(int quantidade) {
-        maxSpace += quantidade;
+        if (quantidade > 0) {
+            maxSpace += quantidade;
+        }
     }
-    
+
+    public boolean removeItem(Item item) {
+        if (items.remove(item)) {
+            usedSpace -= item.getSize();
+            return true;
+        }
+        return false;
+    }
+
+    // GETTERS
+    public int getMaxSpace() {
+        return maxSpace;
+    }
+
+    public int getUsedSpace() {
+        return usedSpace;
+    }
+
+    public List<Item> getItems() {
+        return items;
+    }
 }

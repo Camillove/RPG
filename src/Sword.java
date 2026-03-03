@@ -1,31 +1,53 @@
-public class Sword extends Item {
-    
-    int damage;
-    String type;
+import java.util.Random;
 
-    // Construtor da espada
-    public Sword(String name,int valor ,int damage, String type,int size) {
-        super(name,valor,size);
+public class Sword extends Item {
+
+    private int damage;
+    private String type;
+    private static final Random random = new Random();
+
+    // Construtor
+    public Sword(String name, int value, int damage, String type, int size) {
+        super(name, value, size);
         this.damage = damage;
         this.type = type;
     }
 
-    // Método responsável por calcular o dano final da arma
+    // GETTERS
+    public int getDamage() {
+        return damage;
+    }
+
+    public String getType() {
+        return type;
+    }
+
+    // SETTERS
+    public void setDamage(int damage) {
+        if (damage > 0) {
+            this.damage = damage;
+        }
+    }
+
+    public void setType(String type) {
+        if (type != null && !type.isEmpty()) {
+            this.type = type;
+        }
+    }
+
+    // Método que calcula o dano
     public int calculateDamage() {
 
-        // Gerador de número aleatório (simula dado RPG)
-        java.util.Random random = new java.util.Random();
-
-        // Variável que armazenará o dano total final
         int danoTotal = 0;
+        int dado = random.nextInt(20) + 1;
+        String weaponName = getName(); // agora usa getter
 
-        switch (name) {
+        switch (weaponName) {
 
             case "Adaga" -> {
                 for (int i = 0; i < 2; i++) {
 
-                    int danoFinal = this.damage;
-                    int dado = random.nextInt(20) + 1;
+                    int danoFinal = damage;
 
                     if (dado == 20) {
                         System.out.println("CRÍTICO!");
@@ -37,8 +59,7 @@ public class Sword extends Item {
             }
 
             case "Katana" -> {
-                int danoFinal = this.damage;
-                int dado = random.nextInt(20) + 1;
+                int danoFinal = damage;
 
                 int multiplicadorCritico = switch (type) {
                     case "Rara" -> 3;
@@ -55,8 +76,7 @@ public class Sword extends Item {
             }
 
             case "Espada Longa" -> {
-                int danoFinal = this.damage;
-                int dado = random.nextInt(20) + 1;
+                int danoFinal = damage;
 
                 int chanceCritico = switch (type) {
                     case "Rara" -> 18;
@@ -73,8 +93,7 @@ public class Sword extends Item {
             }
 
             default -> {
-                int danoFinal = this.damage;
-                int dado = random.nextInt(20) + 1;
+                int danoFinal = damage;
 
                 if (dado == 20) {
                     System.out.println("CRÍTICO!");
@@ -82,10 +101,9 @@ public class Sword extends Item {
                 }
 
                 danoTotal = danoFinal;
+            }
         }
-}
 
-        // Retorna o dano total calculado
         return danoTotal;
     }
 }
