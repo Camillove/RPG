@@ -1,91 +1,162 @@
+package com.RPG.TheLastRoar;
+
 import java.util.List;
 import java.util.Random;
 
+import javafx.scene.image.Image;
+
+/**
+ * Character.java
+ * Representa o personagem do jogador
+ * Controla vida, XP, level, inventário, armas e resistência
+ */
 public class Character {
 
-    private String name;
-    private int life;
-    private int maxLife;
-    private int coin;
-    private int resistance;
-    private Inventory inventory;
-    private int nivel = 1;
-    private int xp = 0;
-    private int xpNecessary = 10;
-    private Sword sword;
-    private static final Random random = new Random();
+    // Informações básicas do personagem
+    private String name;              // Nome do personagem
+    private int life;                 // Pontos de vida atuais
+    private int maxLife;              // Pontos de vida máximos
+    private int coin;                 // Dinheiro do personagem
+    private int resistance;           // Resistência a dano do personagem
+    private Inventory inventory;      // Mochila que armazena itens
+    
+    // Sistema de leveling
+    private int nivel = 1;            // Nível atual (1-10)
+    private int xp = 0;               // Experiência atual
+    private int xpNecessary = 10;     // Experiência necessária para o próximo level
+    
+    // Equipamento do personagem
+    private Sword sword;              // Arma equipada
+    
+    // Utilitários
+    private static final Random random = new Random();  // Para gerar números aleatórios
+    private Image sprite;             // Imagem do personagem no mapa
+    private Image battleSprite;       // Imagem do personagem em batalha
 
-    // CONSTRUTOR
-    public Character(String name, int life, int resistance, Sword sword) {
+    /**
+     * CONSTRUTOR - Character()
+     * Inicializa um novo personagem com as propriedades fornecidas
+     * 
+     * Parâmetros:
+     * - name: Nome do personagem
+     * - life: Vida máxima (vida atual também começa com este valor)
+     * - resistance: Resistência a dano
+     * - sword: Espada inicial do personagem
+     * - sprite: Imagem para mostrar no mapa
+     * - battleSprite: Imagem para mostrar em batalhas
+     */
+    public Character(String name, int life, int resistance, Sword sword, Image sprite, Image battleSprite) {
         this.name = name;
-        this.life = life;
-        this.maxLife = life;
-        this.resistance = resistance;
-        this.coin = 0;
-        this.inventory = new Inventory();
-        this.sword = sword;
+        this.life = life;              // Vida atual começa no máximo
+        this.maxLife = life;           // Armazena o máximo
+        this.resistance = resistance;  // Define resistência
+        this.coin = 0;                 // Começa sem dinheiro
+        this.inventory = new Inventory();  // Cria uma nova mochila vazia
+        this.sword = sword;            // Equipa a espada inicial
+        this.sprite = sprite;          // Define imagem do mapa
+        this.battleSprite = battleSprite;  // Define imagem de batalha
     }
 
-    // GETTERS
-    public String getName() { return name; }
-    public int getLife() { return life; }
-    public int getMaxLife() { return maxLife; }
-    public int getCoin() { return coin; }
-    public int getResistance() { return resistance; }
-    public Inventory getInventory() { return inventory; }
-    public int getNivel() { return nivel; }
-    public int getXp() { return xp; }
-    public int getXpNecessary() { return xpNecessary; }
-    public Sword getSword() { return sword; }
+    /**
+     * GETTERS (Métodos que retornam as informações)
+     * Use esses métodos para obter informações do personagem
+     */
+    public String getName() { return name; }              // Retorna o nome
+    public int getLife() { return life; }                 // Retorna vida atual
+    public int getMaxLife() { return maxLife; }           // Retorna vida máxima
+    public int getCoin() { return coin; }                 // Retorna dinheiro
+    public int getResistance() { return resistance; }     // Retorna resistência
+    public Inventory getInventory() { return inventory; } // Retorna a mochila
+    public int getNivel() { return nivel; }               // Retorna level atual
+    public int getXp() { return xp; }                     // Retorna XP atual
+    public int getXpNecessary() { return xpNecessary; }   // Retorna XP necessário para level up
+    public Sword getSword() { return sword; }             // Retorna a espada equipada
 
-    // CONTROLE DE VIDA
+    /**
+     * CONTROLE DE VIDA
+     * setLife(int life)
+     * Define a vida do personagem
+     * Garante que a vida nunca seja menor que 0 ou maior que maxLife
+     */
     public void setLife(int life) {
+        // Math.max(0, ...) garante que vida não seja negativa
+        // Math.min(..., maxLife) garante que vida não ultrapasse o máximo
         this.life = Math.max(0, Math.min(life, maxLife));
     }
 
+    /**
+     * addCoin(int amount)
+     * Adiciona dinheiro ao personagem
+     * Só adiciona se o valor for positivo (para evitar bugs)
+     */
     public void addCoin(int amount) {
-        if (amount > 0) {
-            this.coin += amount;
+        if (amount > 0) {  // Verifica se é um valor válido
+            this.coin += amount;  // Adiciona o valor
         }
     }
 
+    /**
+     * setSword(Sword sword)
+     * Equipa uma nova espada
+     * Valida para garantir que não é nula
+     */
     public void setSword(Sword sword) {
-        if (sword != null) {
-            this.sword = sword;
+        if (sword != null) {  // Verifica se a espada é válida
+            this.sword = sword;  // Equipa a nova espada
         }
     }
 
-    // SISTEMA DE XP E LEVEL
-    public void earnXp(int quantidade) {
-        if (quantidade <= 0) return;
-
-        xp += quantidade;
-        System.out.println(name + " ganhou " + quantidade + " XP!");
-        calculateLevel();
+    public Image getSprite() {
+        return sprite;
     }
 
+    public Image getBattleSprite() {
+        return battleSprite;
+    }
+    /**
+     * SISTEMA DE XP E LEVEL
+     * O personagem pode atingir no máximo level 10
+     * A cada level up, ganha vida e espaço na mochila
+     */
+    
+    /**
+     * earnXp(int quantidade)
+     * Ganha experiência ao derrotar inimigos
+     * Se tiver XP suficiente, sobe de nível automaticamente
+     */
+    public void earnXp(int quantidade) {
+        if (quantidade <= 0) return;  // Ignora valores inválidos
+
+        xp += quantidade;  // Adiciona XP
+        calculateLevel();  // Verifica se pode subir de nível
+    }
+
+    /**
+     * calculateLevel()
+     * Verifica se o personagem tem XP suficiente para subir de nível
+     * Se sim, realiza o level up e ajusta as estatísticas
+     */
     private void calculateLevel() {
 
+        // Sobe de nível enquanto tiver XP suficiente e não estiver no level máximo (10)
         while (xp >= xpNecessary && nivel < 10) {
 
-            xp -= xpNecessary;
-            nivel++;
-            xpNecessary += 5;
+            xp -= xpNecessary;      // Remove o XP gasto
+            nivel++;                // Incrementa o nível
+            xpNecessary += 5;       // Próximo level requer mais XP (começa em 10, depois 15, 20, etc)
 
-            System.out.println("Você subiu para o nível " + nivel + "!");
+            maxLife += 2;           // Ganha 2 de vida
+            life = maxLife;         // Recupera toda a vida
 
-            maxLife += 2;
-            life = maxLife;
-
+            // A cada 5 níveis, ganha espaço na mochila
             if (nivel == 5 || nivel == 10) {
-                inventory.increaseSpace(5);
-                System.out.println("Você ganhou +5 espaços no inventário!");
+                inventory.increaseSpace(5);  // Aumenta espaço em 5
             }
         }
 
+        // Se chegou no máximo level (10), garante que XP não passe do necessário
         if (nivel == 10 && xp >= xpNecessary) {
-            xp = xpNecessary;
-            System.out.println("Você está no nível máximo!");
+            xp = xpNecessary;  // Limita ao máximo
         }
     }
 
@@ -94,19 +165,9 @@ public class Character {
 
         if (alvo == null) return;
 
-        System.out.println("\n" + name + " atacou " + alvo.getName() + "!");
-
         int danoFinal = Math.max(0, sword.calculateDamage() - alvo.getResistance());
 
         alvo.setLife(alvo.getLife() - danoFinal);
-
-        System.out.println("Causou " + danoFinal + " de dano!");
-
-        if (alvo.getLife() <= 0) {
-            System.out.println(alvo.getName() + " morreu!");
-        } else {
-            System.out.println(alvo.getName() + " agora tem " + alvo.getLife() + " de vida.");
-        }
     }
 
     // ATAQUE EM ÁREA
@@ -120,16 +181,11 @@ public class Character {
 
             Monsters alvo = alvos.get(i);
 
-            System.out.println("\n" + name + " atacou " + alvo.getName() + "!");
-
             int danoFinal = Math.max(0, danoBase - alvo.getResistance());
 
             alvo.setLife(alvo.getLife() - danoFinal);
 
-            System.out.println("Causou " + danoFinal + " de dano!");
-
             if (alvo.getLife() <= 0) {
-                System.out.println(alvo.getName() + " morreu!");
                 alvos.remove(i);
                 i--;
             }
@@ -141,12 +197,6 @@ public class Character {
 
         int dado = random.nextInt(20) + 1;
 
-        if (dado > 18) {
-            System.out.println("Você fugiu!!");
-            return true;
-        } else {
-            System.out.println("Você não conseguiu fugir!");
-            return false;
-        }
+        return dado > 18;
     }
 }
