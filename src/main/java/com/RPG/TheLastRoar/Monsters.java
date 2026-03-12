@@ -36,6 +36,8 @@ public class Monsters {
     private int dropXp;         // Experiência que o jogador ganha ao derrotar este inimigo
     private int speed;          // Velocidade de movimento (pixels por frame)
     private int resistance;     // Resistência/Defesa (reduz dano recebido)
+    protected String imagePath;
+    protected String battleImagePath;
 
     /**
      * CONSTRUTOR - Monsters()
@@ -59,7 +61,7 @@ public class Monsters {
         this.dropCoin = dropCoin;   // Moedas que dá
         this.dropXp = dropXp;       // XP que dá
         this.speed = speed;         // Velocidade
-        this.resistance = resistance;  // Defesa
+        this.resistance = resistance;
     }
 
     /**
@@ -74,7 +76,8 @@ public class Monsters {
     public int getDropXp() { return dropXp; }             // Retorna XP que dá
     public int getSpeed() { return speed; }               // Retorna velocidade
     public int getResistance() { return resistance; }     // Retorna resistência
-
+    public String getImagePath() { return imagePath; }    
+    public String getBattleImagePath() { return battleImagePath; }
     /**
      * setLife(int life)
      * Altera a vida do inimigo
@@ -190,22 +193,27 @@ public class Monsters {
     }
 }
 
-/**
- * GoblinExp.java - GOBLIN MAIS FORTE
- * Um Goblin mais experiente e com mais vida/dano que o Goblin comum
- */
-class GoblinExp extends Monsters {
-    public GoblinExp() {
-        super("GoblinExp", 15, 4, 5, 3, 30, 1);  // Mais vida, mais dano, mais XP
+class GoblinBoss extends Monsters {
+    public GoblinBoss() {
+        super("GoblinBoss", 30, 8, 10, 5, 50, 2);
+        this.imagePath = "/images/sprite_goblin.png"; // <-- DEFINE A IMAGEM AQUI
+        this.battleImagePath = "/images/goblin.png";
     }
 }
 
-/**
- * GoblinBoss.java - GOBLIN CHEFE
- * Um Goblin muito forte, provavelmente um boss
- */
-class GoblinBoss extends Monsters {
-    public GoblinBoss() {
-        super("GoblinBoss", 30, 8, 10, 5, 50, 2);  // Muito vida, muito dano
+class GoblinExp extends Monsters {
+    public GoblinExp() {
+        super("GoblinExp", 15, 4, 5, 3, 30, 1);
+        this.imagePath = "/images/sprite_goblin.png"; // <-- DEFINE A IMAGEM AQUI
+        this.battleImagePath = "/images/goblin.png";
+    }
+}
+
+// Crie a classe do Goblin normal se não tiver:
+class Goblin extends Monsters {
+    public Goblin() {
+        super("Goblin", 80, 2, 2, 1, 20, 0); // Exemplo de status
+        this.imagePath = "/images/sprite_goblin.png";
+        this.battleImagePath = "/images/goblin.png";
     }
 }

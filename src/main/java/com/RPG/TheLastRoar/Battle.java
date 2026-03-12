@@ -3,124 +3,143 @@ package com.RPG.TheLastRoar;
 import javafx.animation.FadeTransition;
 import javafx.animation.PauseTransition;
 import javafx.animation.TranslateTransition;
+import javafx.geometry.Insets;
 import javafx.geometry.Pos;
 import javafx.scene.Scene;
 import javafx.scene.control.Button;
 import javafx.scene.control.ProgressBar;
 import javafx.scene.image.Image;
 import javafx.scene.image.ImageView;
+import javafx.scene.layout.BorderPane;
 import javafx.scene.layout.HBox;
-import javafx.scene.layout.Pane;
 import javafx.scene.layout.StackPane;
+import javafx.scene.layout.VBox;
 import javafx.stage.Stage;
 import javafx.util.Duration;
 
 public class Battle {
     private static boolean inBattle = false;
 
-    public static void startBattle(Stage stage, Scene mapScene, Character playerChar, Goblin goblin,
-                                    ImageView playerView, ImageView enemyMapView, App app){
+    public static void startBattle(Stage stage, Scene mapScene, Character playerChar, Monsters monstro, 
+                                   ImageView playerView, ImageView enemyView, App app, StackPane originalLayout) {
         if(inBattle) return;
         inBattle = true;
-
-        // Fundo que estica para a tela toda
+        
+        // --- CARREGAMENTO VISUAL ---
         ImageView bg = new ImageView(new Image(Battle.class.getResource("/images/battlebg2.png").toExternalForm()));
         bg.fitWidthProperty().bind(stage.widthProperty());
         bg.fitHeightProperty().bind(stage.heightProperty());
 
-        // Área de luta com tamanho fixo (800x600) centralizada
-        Pane gameArea = new Pane();
-        gameArea.setPrefSize(800, 600);
-        gameArea.setMaxSize(800, 600);
-
         ImageView pImg = new ImageView(playerChar.getBattleSprite());
         pImg.setFitWidth(200); pImg.setPreserveRatio(true);
-        pImg.setX(120); pImg.setY(320);
-
-        ImageView eImg = new ImageView(new Image(Battle.class.getResource("/images/goblin.png").toExternalForm()));
+        
+        ImageView eImg = new ImageView(new Image(Battle.class.getResource(monstro.getBattleImagePath()).toExternalForm()));
         eImg.setFitWidth(200); eImg.setPreserveRatio(true);
-        eImg.setX(500); eImg.setY(120);
 
-        ProgressBar pBar = new ProgressBar(playerChar.getLife()/100.0);
-        pBar.setLayoutX(80); pBar.setLayoutY(280); pBar.setPrefWidth(200);
+        // Barras de vida
+        ProgressBar pBar = new ProgressBar(playerChar.getLife() / 100.0);
+        ProgressBar eBar = new ProgressBar((double)monstro.getLife() / monstro.getMaxLife());
+        pBar.setPrefWidth(200); eBar.setPrefWidth(200);
 
-        ProgressBar eBar = new ProgressBar(goblin.getLife()/80.0);
-        eBar.setLayoutX(500); eBar.setLayoutY(80); eBar.setPrefWidth(200);
+        // Layout de Combate
+        VBox pBox = new VBox(10, pBar, pImg);
+        VBox eBox = new VBox(10, eBar, eImg);
+        HBox fighters = new HBox(100, pBox, eBox);
+        fighters.setAlignment(Pos.CENTER);
 
         Button attack = new Button("Atacar");
-        Button defend = new Button("Defender");
         Button run = new Button("Fugir");
-        HBox buttons = new HBox(20, attack, defend, run);
-        buttons.setAlignment(Pos.CENTER); buttons.setLayoutX(250); buttons.setLayoutY(500);
+        HBox buttons = new HBox(20, attack, run);
+        buttons.setAlignment(Pos.CENTER);
+        buttons.setStyle("-fx-background-color: rgba(0,0,0,0.6); -fx-padding: 20; -fx-background-radius: 10;");
 
-        gameArea.getChildren().addAll(pImg, eImg, pBar, eBar, buttons);
+        BorderPane root = new BorderPane();
+        root.setCenter(fighters);
+        root.setBottom(buttons);
+        BorderPane.setMargin(buttons, new Insets(0, 0, 50, 0));
 
-        // StackPane que junta o fundo esticado com a área de jogo centralizada
-        StackPane battleLayout = new StackPane(bg, gameArea);
-        battleLayout.setOpacity(0);
-        battleLayout.setStyle("-fx-background-color: black;");
+        // Layout principal da Batalha
+        StackPane battleLayout = new StackPane(bg, root);
         
-        stage.setScene(new Scene(battleLayout));
-        stage.setFullScreen(true);
+        // Efeito de entrada
+        battleLayout.setOpacity(0);
 
+        // --- A MÁGICA ACONTECE AQUI ---
+        // Em vez de recriar a cena, nós trocamos o recheio dela
+        mapScene.setRoot(battleLayout);
+        
+        // Garante que o modo tela cheia não caia durante a transição
+        if (!stage.isFullScreen()) {
+            stage.setFullScreen(true);
+        }
+
+        // Fade In da batalha
         FadeTransition fadeIn = new FadeTransition(Duration.millis(500), battleLayout);
-        fadeIn.setFromValue(0); fadeIn.setToValue(1);
+        fadeIn.setToValue(1);
         fadeIn.play();
 
+        // --- LÓGICA E ANIMAÇÕES ---
         attack.setOnAction(e -> {
             buttons.setDisable(true);
-            playAtk(pImg, 60, () -> {
-                goblin.setLife(goblin.getLife() - 20);
-                eBar.setProgress(goblin.getLife()/80.0);
-                showHit(gameArea, eImg);
-
-                PauseTransition pause = new PauseTransition(Duration.millis(600));
-                pause.setOnFinished(ev -> {
-                    if(goblin.getLife() <= 0) exitBattle(stage, mapScene, app, battleLayout);
-                    else {
-                        playAtk(eImg, -60, () -> {
-                            playerChar.setLife(playerChar.getLife() - 10);
-                            pBar.setProgress(playerChar.getLife()/100.0);
-                            showHit(gameArea, pImg);
-                            if(playerChar.getLife() <= 0) stage.close();
-                            else buttons.setDisable(false);
-                        });
-                    }
-                });
-                pause.play();
+            playAttackAnimation(pImg, eImg, () -> {
+                monstro.setLife(monstro.getLife() - 20);
+                eBar.setProgress((double)monstro.getLife() / monstro.getMaxLife());
+                
+                if(monstro.getLife() <= 0) {
+                    // Passamos originalLayout para poder devolvê-lo à cena
+                    exitBattle(stage, mapScene, app, battleLayout, originalLayout);
+                } else {
+                    PauseTransition pause = new PauseTransition(Duration.millis(600));
+                    pause.setOnFinished(ev -> {
+                        playerChar.setLife(playerChar.getLife() - 10);
+                        pBar.setProgress(playerChar.getLife() / 100.0);
+                        playShakeAnimation(pImg);
+                        buttons.setDisable(false);
+                    });
+                    pause.play();
+                }
             });
         });
 
-        run.setOnAction(e -> exitBattle(stage, mapScene, app, battleLayout));
+        run.setOnAction(e -> exitBattle(stage, mapScene, app, battleLayout, originalLayout));
     }
 
-    private static void playAtk(ImageView v, double d, Runnable callback){
-        TranslateTransition tt = new TranslateTransition(Duration.millis(150), v);
-        tt.setByX(d); tt.setCycleCount(2); tt.setAutoReverse(true);
-        tt.setOnFinished(e -> callback.run());
-        tt.play();
+    private static void playAttackAnimation(ImageView attacker, ImageView victim, Runnable onFinished) {
+        TranslateTransition move = new TranslateTransition(Duration.millis(200), attacker);
+        move.setByX(150);
+        move.setAutoReverse(true);
+        move.setCycleCount(2);
+        move.setOnFinished(e -> onFinished.run());
+        move.play();
     }
 
-    private static void showHit(Pane root, ImageView target){
-        try {
-            ImageView hit = new ImageView(new Image(Battle.class.getResource("/images/hit.png").toExternalForm()));
-            hit.setFitWidth(150); hit.setPreserveRatio(true);
-            hit.setX(target.getX() + 25); hit.setY(target.getY() + 25);
-            root.getChildren().add(hit);
-            FadeTransition ft = new FadeTransition(Duration.millis(300), hit);
-            ft.setFromValue(1); ft.setToValue(0);
-            ft.setOnFinished(e -> root.getChildren().remove(hit));
-            ft.play();
-        } catch(Exception e) {}
+    private static void playShakeAnimation(ImageView target) {
+        TranslateTransition shake = new TranslateTransition(Duration.millis(50), target);
+        shake.setByX(10);
+        shake.setCycleCount(6);
+        shake.setAutoReverse(true);
+        shake.play();
     }
 
-    private static void exitBattle(Stage stage, Scene mapScene, App app, StackPane layout){
-        FadeTransition fadeOut = new FadeTransition(Duration.millis(500), layout);
-        fadeOut.setFromValue(1); fadeOut.setToValue(0);
+    // Adicionamos originalLayout nos parâmetros
+    private static void exitBattle(Stage stage, Scene mapScene, App app, StackPane battleLayout, StackPane originalLayout){
+        FadeTransition fadeOut = new FadeTransition(Duration.millis(500), battleLayout);
+        fadeOut.setToValue(0);
         fadeOut.setOnFinished(e -> {
             inBattle = false;
-            stage.setScene(mapScene);
-            stage.setFullScreen(true);
+            
+            // --- A MÁGICA DE VOLTAR ---
+            // Devolvemos o mapa (originalLayout) para a cena principal!
+            mapScene.setRoot(originalLayout);
+            
+            // Reajusta opacidade para garantir que o mapa apareça
+            originalLayout.setOpacity(1); 
+            
+            if (!stage.isFullScreen()) {
+                stage.setFullScreen(true);
+            }
+            
+            // Avisa o App que acabou
             app.resumeTimers();
         });
         fadeOut.play();

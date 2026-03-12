@@ -1,173 +1,103 @@
 package com.RPG.TheLastRoar;
 
+import java.io.File;
+import java.util.function.Consumer;
+
 import javafx.geometry.Pos;
-import javafx.geometry.Rectangle2D;
-import javafx.scene.Scene;
 import javafx.scene.control.Button;
-import javafx.scene.control.Label;
-import javafx.scene.image.Image;
-import javafx.scene.image.ImageView;
+import javafx.scene.layout.HBox;
 import javafx.scene.layout.StackPane;
 import javafx.scene.layout.VBox;
-import javafx.stage.Screen;
-import javafx.stage.Stage;
+import javafx.scene.text.Text;
 
-/**
- * StartScreen.java - A TELA INICIAL DO JOGO
- * 
- * O QUE FAZ:
- * Cria e mostra a tela de menu inicial
- * - Mostra uma imagem de fundo
- * - Mostra o título do jogo em letras grandes
- * - Mostra um botão "INICIAR" para começar o jogo
- * - Se adapta automaticamente ao tamanho da tela do usuário (responsivo)
- * 
- * COMO USAR:
- * StartScreen menu = new StartScreen();
- * Scene cenaMenu = menu.createStartScene(stage, mapScene);
- * 
- * MODIFICAR:
- * - Título: Mude "THE LAST ROAR" para outro nome
- * - Cores: Mude a cor do texto ou do botão
- * - Fundo: Mude o arquivo da imagem (start.png)
- * - Posição: Mude o Pos.CENTER para Pos.TOP, Pos.BOTTOM, etc
- */
 public class StartScreen {
 
-    /**
-     * createStartScene()
-     * Cria a cena do menu inicial
-     * 
-     * Parâmetros:
-     * - stage: A janela principal (usada para trocar de cena)
-     * - mapScene: A cena do mapa (mostrada quando clicar em "INICIAR")
-     * 
-     * Retorno:
-     * - Uma Scene (cena) pronta para ser exibida
-     * 
-     * Exemplo:
-     * Scene menu = startScreen.createStartScene(stage, mapScene);
-     * stage.setScene(menu);
-     */
-    public Scene createStartScene(Stage stage, Scene mapScene) {
-
-        // =========== DETECTA A RESOLUÇÃO DA TELA ==========
-        // Pega informações da tela do usuário
-        Rectangle2D screen = Screen.getPrimary().getBounds();
-        double screenWidth = screen.getWidth();   // Largura da tela (ex: 1920)
-        double screenHeight = screen.getHeight(); // Altura da tela (ex: 1080)
-
-        // =========== CONTÁINER PRINCIPAL ==========
-        // StackPane coloca elementos um em cima do outro
-        // Primeiro elemento fica atrás, último fica na frente
+    public static StackPane createLayout(Runnable onNewGame, Runnable onContinue, Consumer<String> onLoadSlot) {
         StackPane root = new StackPane();
-
-        /**
-         * FUNDO DA TELA
-         * Carrega a imagem que fica nos fundos
-         * 
-         * MODIFICAR:
-         * Mude "/images/start.png" para o nome de outra imagem
-         */
-        ImageView fundo = new ImageView(
-                new Image(getClass().getResourceAsStream("/images/start.png"))
-        );
-        // Dimensiona a imagem para preencher toda a tela
-        fundo.setFitWidth(screenWidth);    // Preenche a largura
-        fundo.setFitHeight(screenHeight);  // Preenche a altura
-
-        /**
-         * TÍTULO DO JOGO
-         * Texto grande e chamativo com efeito de sombra
-         * 
-         * MODIFICAR:
-         * Mude "THE LAST ROAR" para outro título
-         */
-        Label titulo = new Label("THE LAST ROAR");
         
-        // CSS para estilizar o título (cor, tamanho, sombra)
-        titulo.setStyle(
-                // Tamanho da fonte (10% da altura da tela)
-                // Se a tela tem 1080px, o texto fica com ~108px
-                "-fx-font-size: " + (screenHeight * 0.10) + "px;" +
-                // Cor do texto (branco)
-                "-fx-text-fill: white;" +
-                // Texto em negrito
-                "-fx-font-weight: bold;" +
-                // Efeito de sombra (drop shadow)
-                "-fx-effect: dropshadow(gaussian, black, 20, 0.8, 0, 0);"
-        );
+        Text title = new Text("THE LAST ROAR");
+        title.setStyle("-fx-font-size: 60px; -fx-fill: white; -fx-font-weight: bold;");
+        StackPane.setAlignment(title, Pos.TOP_CENTER);
+        title.setTranslateY(80);
 
-        /**
-         * BOTÃO INICIAR
-         * Botão azul com estilo personalizado
-         * 
-         * MODIFICAR:
-         * Mude "INICIAR" para outro texto
-         * Mude as cores (linear-gradient, -fx-text-fill)
-         */
-        Button startButton = new Button("INICIAR");
+        VBox menuBox = new VBox(20);
+        menuBox.setAlignment(Pos.CENTER);
+        menuBox.setTranslateY(50);
 
-        // Define o tamanho do botão (percentual da tela)
-        startButton.setPrefWidth(screenWidth * 0.15);   // 15% da largura da tela
-        startButton.setPrefHeight(screenHeight * 0.07); // 7% da altura da tela
+        Button btnNovo = criarBotao("NOVO JOGO", "#4CAF50");
+        btnNovo.setOnAction(e -> onNewGame.run());
 
-        // CSS para estilizar o botão
-        startButton.setStyle(
-                // Tamanho da fonte do botão (2.5% da altura)
-                "-fx-font-size: " + (screenHeight * 0.025) + "px;" +
-                // Cor do fundo (gradiente azul do claro para escuro)
-                "-fx-background-color: linear-gradient(#5f9cff,#1e5fbf);" +
-                // Cor do texto (branco)
-                "-fx-text-fill: white;" +
-                // Botões com cantos arredondados
-                "-fx-background-radius: 10;"
-        );
+        Button btnContinuar = criarBotao("CONTINUAR", "#2196F3");
+        if (getUltimoSave() == null) {
+            btnContinuar.setDisable(true);
+            btnContinuar.setText("CONTINUAR (Vazio)");
+        } else {
+            btnContinuar.setOnAction(e -> onContinue.run());
+        }
 
-        /**
-         * AÇÃO DO BOTÃO
-         * O que acontece quando o jogador clica em "INICIAR"
-         */
-        startButton.setOnAction(e -> {
-            // Troca para a cena do mapa
-            stage.setScene(mapScene);
-            
-            // Dá foco para o mapa para que ele receba os input de teclado
-            mapScene.getRoot().requestFocus();
-        });
+        Button btnCarregar = criarBotao("CARREGAR JOGO", "#FF9800");
 
-        /**
-         * LAYOUT DO MENU
-         * Organiza o título e botão no centro da tela
-         */
-        VBox menu = new VBox(40);  // VBox com 40px de espaço entre elementos
-        menu.setAlignment(Pos.CENTER);  // Centraliza o conteúdo (horizontalmente e verticalmente)
-        
-        // Adiciona o título e o botão à VBox
-        menu.getChildren().addAll(titulo, startButton);
+        HBox slotsBox = new HBox(15);
+        slotsBox.setAlignment(Pos.CENTER);
+        slotsBox.setVisible(false);
 
-        // Adiciona o fundo e o menu ao root (StackPane)
-        // Ordem: fundo fica atrás, menu fica na frente
-        root.getChildren().addAll(fundo, menu);
+        // Verifica se o arquivo existe antes de habilitar o botão
+        Button s1 = criarBotaoSlot("Slot 1"); 
+        if (!new File("save1.json").exists()) { s1.setDisable(true); s1.setText("Slot 1 (Vazio)"); }
+        s1.setOnAction(e -> onLoadSlot.accept("save1.json"));
 
-        // =========== CRIA A CENA ==========
-        // Scene = a "tela" que vai ser mostrada na janela
-        Scene scene = new Scene(root, screenWidth, screenHeight);
+        Button s2 = criarBotaoSlot("Slot 2"); 
+        if (!new File("save2.json").exists()) { s2.setDisable(true); s2.setText("Slot 2 (Vazio)"); }
+        s2.setOnAction(e -> onLoadSlot.accept("save2.json"));
 
-        /**
-         * RESPONSIVIDADE
-         * Faz a tela adaptar ao tamanho da janela
-         * Se o usuário redimensionar a janela, tudo adapta automaticamente
-         */
-        // Bind = "liga" a largura do fundo à largura da cena
-        fundo.fitWidthProperty().bind(scene.widthProperty());
-        
-        // Bind = "liga" a altura do fundo à altura da cena
-        fundo.fitHeightProperty().bind(scene.heightProperty());
-        
-        // Permite que a imagem seja deformada se necessário
-        fundo.setPreserveRatio(false);
+        Button s3 = criarBotaoSlot("Slot 3"); 
+        if (!new File("save3.json").exists()) { s3.setDisable(true); s3.setText("Slot 3 (Vazio)"); }
+        s3.setOnAction(e -> onLoadSlot.accept("save3.json"));
 
-        return scene;  // Retorna a cena pronta para ser usada
+        slotsBox.getChildren().addAll(s1, s2, s3);
+
+        // Se não existir NENHUM save, bloqueia o botão pai também
+        if (getUltimoSave() == null) {
+            btnCarregar.setDisable(true);
+            btnCarregar.setText("CARREGAR JOGO (Vazio)");
+        } else {
+            btnCarregar.setOnAction(e -> slotsBox.setVisible(!slotsBox.isVisible()));
+        }
+
+        Button btnSair = criarBotao("SAIR", "#f44336");
+        btnSair.setOnAction(e -> javafx.application.Platform.exit());
+
+        menuBox.getChildren().addAll(btnNovo, btnContinuar, btnCarregar, slotsBox, btnSair);
+
+        root.getChildren().addAll(title, menuBox);
+        root.setStyle("-fx-background-color: #2c3e50;");
+
+        return root;
+    }
+
+    private static Button criarBotao(String texto, String corHex) {
+        Button btn = new Button(texto);
+        btn.setStyle("-fx-font-size: 22px; -fx-padding: 10px 40px; -fx-background-color: " + corHex + "; -fx-text-fill: white; -fx-font-weight: bold; -fx-cursor: hand;");
+        btn.setPrefWidth(300);
+        return btn;
+    }
+
+    private static Button criarBotaoSlot(String texto) {
+        Button btn = new Button(texto);
+        btn.setStyle("-fx-font-size: 16px; -fx-padding: 10px 20px; -fx-background-color: #555; -fx-text-fill: white; -fx-cursor: hand;");
+        return btn;
+    }
+
+    public static String getUltimoSave() {
+        File[] saves = {new File("save1.json"), new File("save2.json"), new File("save3.json")};
+        File maisRecente = null;
+        long maxTime = 0;
+        for (File f : saves) {
+            if (f.exists() && f.lastModified() > maxTime) {
+                maxTime = f.lastModified();
+                maisRecente = f;
+            }
+        }
+        return maisRecente != null ? maisRecente.getName() : null;
     }
 }
