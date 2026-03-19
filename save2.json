@@ -1,0 +1,9 @@
+{
+  "mapaAtual": 1,
+  "posicaoX": 696.0,
+  "posicaoY": 252.0,
+  "vidaPlayer": 100,
+  "levelPlayer": 1,
+  "ouroPlayer": 0,
+  "inimigosMortos": "false,false,false,false,false,false,false,false,false,false;false,false,false,false,false,false,false,false,false,false;false,false,false,false,false,false,false,false,false,false"
+}
