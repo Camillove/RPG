@@ -3,7 +3,6 @@ package com.RPG.TheLastRoar;
 import javafx.animation.AnimationTimer;
 import javafx.animation.FadeTransition;
 import javafx.application.Platform;
-import javafx.geometry.Pos;
 import javafx.geometry.Rectangle2D;
 import javafx.scene.Scene;
 import javafx.scene.image.Image;
@@ -283,8 +282,8 @@ public class App extends javafx.application.Application {
         playerView.setX(data.posX);
         playerView.setY(data.posY);
         player.setLife(data.vida);
-        // player.setNivel(data.level);
-        // player.setCoin(data.ouro);
+        player.setNivel(data.level);
+        player.setCoin(data.ouro);
 
         if (!isInitialLoad) togglePause();
         hudManager.atualizar(player);
@@ -422,9 +421,9 @@ public class App extends javafx.application.Application {
                     FadeTransition ft = new FadeTransition(Duration.millis(500), mainLayout);
                     ft.setFromValue(1);
                     ft.setToValue(0);
-                    ft.setOnFinished(evTransition ->
-                        Battle.startBattle(stage, scene, player, monstro, playerView, ev, App.this, mainLayout)
-                    );
+ft.setOnFinished(e ->
+    Battle.startBattle(stage, cenaMestra, player, monstro, playerView, ev, App.this, mainLayout)
+);
                     ft.play();
                 }
             }

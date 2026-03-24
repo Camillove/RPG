@@ -60,7 +60,22 @@ public class Character {
     public int getNivel() { return nivel; }               
     public int getXp() { return xp; }                     
     public int getXpNecessary() { return xpNecessary; }   
-    public int getMaxXp() { return xpNecessary; } // ALIAS IMPORTANTE PARA A TELA DE BATALHA!
+public int getMaxXp() { return xpNecessary; } // ALIAS IMPORTANTE PARA A TELA DE BATALHA!
+
+    /**
+     * Setters for save/load
+     */
+    public void setNivel(int nivel) {
+        this.nivel = nivel;
+    }
+
+    public void setCoin(int coin) {
+        this.coin = coin;
+    }
+
+    public void setXp(int xp) {
+        this.xp = xp;
+    }
     public Sword getSword() { return sword; }             
     public Image getSprite() { return sprite; }
     public Image getBattleSprite() { return battleSprite; }
