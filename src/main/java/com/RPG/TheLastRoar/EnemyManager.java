@@ -8,14 +8,10 @@ import javafx.scene.image.Image;
 import javafx.scene.image.ImageView;
 import javafx.scene.layout.Pane;
 
-/**
- * Gerencia os inimigos presentes no mapa atual:
- * carregamento, posicionamento, animação e remoção após derrota.
- */
 public class EnemyManager {
 
-    private static final int SPRITE_WIDTH  = 128;
-    private static final int SPRITE_HEIGHT = 128;
+    // Tamanho padrão para inimigos comuns
+    private static final int DEFAULT_SPRITE_SIZE = 128;
 
     private final Pane gameRoot;
     private final double screenW;
@@ -35,13 +31,6 @@ public class EnemyManager {
         this.inimigosDerrotados  = inimigosDerrotados;
     }
 
-    // ----------------------------------------------------------
-    // Configuração por mapa
-    // ----------------------------------------------------------
-
-    /**
-     * Limpa os inimigos atuais e adiciona os do mapa indicado.
-     */
     public void configurarParaMapa(int mapa) {
         this.indiceMapa = mapa;
         gameRoot.getChildren().removeAll(views);
@@ -50,110 +39,97 @@ public class EnemyManager {
 
         switch (mapa) {
             case 0 -> {
-                adicionar(new Goblin(),     6, screenW * 0.3, screenH * 0.1);
-                adicionar(new Goblin(),     1, screenW * 0.7, screenH * 0.2);
+                // Goblin normal: Corte 128x128, Exibe 80x80
+                adicionar(new Goblin(), 6, screenW * 0.3, screenH * 0.1, 128, 80);
+                adicionar(new Goblin(), 1, screenW * 0.7, screenH * 0.2, 128, 80);
             }
             case 1 -> {
-                adicionar(new GoblinExp(),  0, screenW * 0.5, screenH * 0.1);
-                adicionar(new Goblin(),     1, screenW * 0.2, screenH * 0.15);
+                adicionar(new GoblinExp(), 0, screenW * 0.5, screenH * 0.1, 128, 80);
+                adicionar(new GoblinExp(), 1, screenW * 0.2, screenH * 0.15, 128, 80);
             }
             case 2 -> {
-                adicionar(new GoblinBoss(), 0, screenW * 0.5, screenH * 0.1);
+                // BOSS: Se a sua folha (spritesheet) do Boss tem frames de 256x256, 
+                // usamos 256 para o corte E 256 para a exibição.
+                adicionar(new GoblinBoss(), 0, screenW * 0.5, screenH * 0.1, 256, 256);
             }
         }
     }
 
-    private void adicionar(Monsters monstro, int idUnico, double x, double y) {
+    // Agora recebe spriteSize (tamanho do corte na imagem) e displaySize (tamanho na tela)
+    private void adicionar(Monsters monstro, int idUnico, double x, double y, int spriteSize, int displaySize) {
         if (inimigosDerrotados[indiceMapa][idUnico]) return;
 
         String path = monstro.getImagePath();
         if (!path.startsWith("/")) path = "/" + path;
 
         java.net.URL imageUrl = getClass().getResource(path);
-        if (imageUrl == null) {
-            System.err.println("ERRO: Imagem não encontrada: " + path);
-            return;
-        }
+        if (imageUrl == null) return;
 
         ImageView view = new ImageView(new Image(imageUrl.toExternalForm()));
-        view.setViewport(new Rectangle2D(0, 0, SPRITE_WIDTH, SPRITE_HEIGHT));
-        view.setFitWidth(80);
-        view.setFitHeight(80);
+        
+        // Ajusta o corte (Viewport) de acordo com o tamanho real do frame na sheet do Boss
+        view.setViewport(new Rectangle2D(0, 0, spriteSize, spriteSize));
+        
+        // Ajusta o tamanho visual
+        view.setFitWidth(displaySize);
+        view.setFitHeight(displaySize);
+        
         view.setX(x);
         view.setY(y);
+        
+        // Guardamos o spriteSize nas propriedades para a animação não bugar depois
         view.getProperties().put("idNoMapa", idUnico);
         view.getProperties().put("dirMove",  1.0);
+        view.getProperties().put("spriteSize", spriteSize); 
+        view.getProperties().put("displaySize", (double)displaySize);
 
         monstros.add(monstro);
         views.add(view);
         gameRoot.getChildren().add(view);
     }
 
-    // ----------------------------------------------------------
-    // Animação e movimento (chamado pelo timer de IA)
-    // ----------------------------------------------------------
-
-    /**
-     * Atualiza posição e frame de animação de todos os inimigos.
-     * Retorna o índice do inimigo em colisão com o jogador, ou -1.
-     *
-     * @param playerX        Posição X atual do jogador
-     * @param playerY        Posição Y atual do jogador
-     * @param enemyFrame     Frame de animação atual
-     */
     public int atualizar(double playerX, double playerY, int enemyFrame) {
         for (int i = 0; i < views.size(); i++) {
-            ImageView ev     = views.get(i);
-            double dirMove   = (double) ev.getProperties().get("dirMove");
+            ImageView ev = views.get(i);
+            double dirMove = (double) ev.getProperties().get("dirMove");
+            int sSize = (int) ev.getProperties().get("spriteSize"); // Pega o tamanho do corte deste monstro específico
+            double dSize = (double) ev.getProperties().get("displaySize");
 
-            // Movimenta horizontalmente
             ev.setX(ev.getX() + dirMove);
 
-            // Animação de direção
             int eDir = (dirMove > 0) ? 2 : 1;
+            
+            // O segredo está aqui: multiplicamos o frame pelo tamanho real do frame desse monstro (sSize)
             ev.setViewport(new Rectangle2D(
-                enemyFrame * SPRITE_WIDTH,
-                eDir * SPRITE_HEIGHT,
-                SPRITE_WIDTH, SPRITE_HEIGHT
+                enemyFrame * sSize,
+                eDir * sSize,
+                sSize, 
+                sSize
             ));
 
-            // Inverte nas bordas
-            if (ev.getX() > screenW - 150) ev.getProperties().put("dirMove", -1.0);
-            if (ev.getX() < 50)            ev.getProperties().put("dirMove",  1.0);
+            if (ev.getX() > screenW - dSize - 50) ev.getProperties().put("dirMove", -1.0);
+            if (ev.getX() < 50) ev.getProperties().put("dirMove", 1.0);
 
-            // Detecção de colisão
-            double dx = playerX - ev.getX();
-            double dy = playerY - ev.getY();
-            if (Math.sqrt(dx * dx + dy * dy) < 50) {
+            // Colisão baseada no tamanho de exibição
+            double dx = (playerX + 32) - (ev.getX() + dSize/2);
+            double dy = (playerY + 32) - (ev.getY() + dSize/2);
+            if (Math.sqrt(dx * dx + dy * dy) < (dSize * 0.4)) {
                 return i;
             }
         }
         return -1;
     }
 
-    // ----------------------------------------------------------
-    // Pós-batalha
-    // ----------------------------------------------------------
-
-    /**
-     * Marca o inimigo como derrotado e remove da tela.
-     */
     public void removerInimigo(int index) {
         ImageView view = views.get(index);
-        int idNoMapa   = (int) view.getProperties().get("idNoMapa");
+        int idNoMapa = (int) view.getProperties().get("idNoMapa");
         inimigosDerrotados[indiceMapa][idNoMapa] = true;
-
         gameRoot.getChildren().remove(view);
         views.remove(index);
         monstros.remove(index);
     }
 
-    // ----------------------------------------------------------
-    // Getters
-    // ----------------------------------------------------------
-
     public Monsters getMonstro(int index)   { return monstros.get(index); }
     public ImageView getView(int index)     { return views.get(index); }
     public boolean isEmpty()                { return views.isEmpty(); }
-    public int getTotalMapas()              { return inimigosDerrotados.length; }
 }

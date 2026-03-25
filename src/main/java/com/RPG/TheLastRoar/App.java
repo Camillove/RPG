@@ -46,8 +46,8 @@ public class App extends javafx.application.Application {
     private long   lastFrameTime  = 0;
     private final long   frameDelay     = 200_000_000L;
     private final double speed         = 4;
-    private final int    spriteWidth   = 64;
-    private final int    spriteHeight  = 64;
+    private final int    spriteWidth   = 256;
+    private final int    spriteHeight  = 256;
 
     // ---- Animação dos inimigos ----
     private int  enemyFrame         = 0;
@@ -125,8 +125,8 @@ public class App extends javafx.application.Application {
             // Jogador
             player = new Character("Hero", 100, 2,
                 new Sword("Madeira", 3, 6, "Comum", 4),
-                new Image(getClass().getResource("/images/12.png").toExternalForm()),
-                new Image(getClass().getResource("/images/guts.png").toExternalForm())
+                new Image(getClass().getResource("/images/sprite_personagem.png").toExternalForm()),
+                new Image(getClass().getResource("/images/personagem_battle.png").toExternalForm())
             );
 
             playerView = new ImageView(player.getSprite());
@@ -142,11 +142,13 @@ public class App extends javafx.application.Application {
             enemyManager = new EnemyManager(gameRoot, screenW, screenH, inimigosDerrotados);
 
             // Save ou novo jogo
-            if (saveFile != null) {
-                carregarDeJson(saveFile, true);
+            // No App.java, dentro de carregarDeJson ou antes de chamá-lo
+            if (this.hudManager != null) {
+                this.hudManager.atualizar(player);
             } else {
-                indiceMapa = 0;
-                enemyManager.configurarParaMapa(0);
+                // Caso o HUD ainda não exista, apenas carregue os dados 
+                // e deixe para atualizar o HUD quando ele for criado.
+                System.out.println("Aviso: HudManager ainda não inicializado.");
             }
 
             // Subsistemas de UI
