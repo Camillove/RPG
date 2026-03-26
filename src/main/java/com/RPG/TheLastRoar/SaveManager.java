@@ -3,16 +3,16 @@ package com.RPG.TheLastRoar;
 import java.io.IOException;
 import java.nio.file.Files;
 import java.nio.file.Paths;
+import java.util.Properties;
+import java.io.StringReader;
+import java.io.StringWriter;
 
 /**
  * Gerencia o sistema de save/load do jogo.
- * Lê e escreve arquivos JSON simples com o estado da partida.
+ * Salva e carrega o estado da partida em um arquivo de texto local.
  */
 public class SaveManager {
 
-    /**
-     * Dados carregados de um arquivo de save.
-     */
     public static class SaveData {
         public int mapa;
         public double posX;
@@ -24,110 +24,103 @@ public class SaveManager {
     }
 
     /**
-     * Salva o estado atual do jogo em um arquivo JSON.
-     *
-     * @param arquivo             Nome do arquivo (ex: "save1.json")
-     * @param indiceMapa          Índice do mapa atual
-     * @param posX                Posição X do jogador
-     * @param posY                Posição Y do jogador
-     * @param player              Objeto do jogador
-     * @param inimigosDerrotados  Matriz de inimigos derrotados por mapa
+     * Salva o estado atual do jogo no disco.
      */
     public static void salvar(String arquivo, int indiceMapa, double posX, double posY,
-                               Character player, boolean[][] inimigosDerrotados) {
+                              Character player, boolean[][] inimigosDerrotados) {
         try {
+            // 1. Monta a string da matriz de inimigos (ex: false,true,false;true,false,false)
             StringBuilder sbInimigos = new StringBuilder();
-            for (int i = 0; i < inimigosDerrotados.length; i++) {
-                for (int j = 0; j < inimigosDerrotados[i].length; j++) {
-                    sbInimigos.append(inimigosDerrotados[i][j]);
-                    if (j < inimigosDerrotados[i].length - 1) sbInimigos.append(",");
+            if (inimigosDerrotados != null) {
+                for (int i = 0; i < inimigosDerrotados.length; i++) {
+                    for (int j = 0; j < inimigosDerrotados[i].length; j++) {
+                        sbInimigos.append(inimigosDerrotados[i][j]);
+                        if (j < inimigosDerrotados[i].length - 1) sbInimigos.append(",");
+                    }
+                    if (i < inimigosDerrotados.length - 1) sbInimigos.append(";");
                 }
-                if (i < inimigosDerrotados.length - 1) sbInimigos.append(";");
             }
 
-            int levelPlayer = player.getNivel();
-            int ouroPlayer  = player.getCoin();
+            // 2. Usamos Properties do Java para garantir que o formato nunca quebre
+            Properties props = new Properties();
+            props.setProperty("mapaAtual", String.valueOf(indiceMapa));
+            props.setProperty("posicaoX", String.valueOf(posX));
+            props.setProperty("posicaoY", String.valueOf(posY));
+            props.setProperty("vidaPlayer", String.valueOf(player.getLife()));
+            props.setProperty("levelPlayer", String.valueOf(player.getNivel()));
+            props.setProperty("ouroPlayer", String.valueOf(player.getCoin()));
+            props.setProperty("inimigosMortos", sbInimigos.toString());
 
-            String json = "{\n" +
-                "  \"mapaAtual\": " + indiceMapa + ",\n" +
-                "  \"posicaoX\": " + posX + ",\n" +
-                "  \"posicaoY\": " + posY + ",\n" +
-                "  \"vidaPlayer\": " + player.getLife() + ",\n" +
-                "  \"levelPlayer\": " + levelPlayer + ",\n" +
-                "  \"ouroPlayer\": " + ouroPlayer + ",\n" +
-                "  \"inimigosMortos\": \"" + sbInimigos + "\"\n" +
-                "}";
+            // 3. Escreve no arquivo
+            StringWriter writer = new StringWriter();
+            props.store(writer, "Save Data - The Last Roar");
+            Files.writeString(Paths.get(arquivo), writer.getBuffer().toString());
 
-            Files.write(Paths.get(arquivo), json.getBytes());
-            System.out.println("Jogo salvo com sucesso em " + arquivo + "!");
+            System.out.println("[SaveManager] Jogo salvo com sucesso em " + arquivo + "!");
 
         } catch (IOException e) {
-            System.err.println("Erro ao salvar o jogo: " + e.getMessage());
+            System.err.println("[SaveManager] Erro ao salvar o jogo: " + e.getMessage());
+            e.printStackTrace();
         }
     }
 
     /**
-     * Carrega o estado do jogo de um arquivo JSON.
-     *
-     * @param arquivo             Nome do arquivo a carregar
-     * @param totalMapas          Quantidade total de mapas (para dimensionar a matriz)
-     * @return SaveData com os dados lidos, ou null se o arquivo não existir
+     * Carrega o estado do jogo do arquivo no disco.
      */
     public static SaveData carregar(String arquivo, int totalMapas) {
-        try {
-            if (!Files.exists(Paths.get(arquivo))) {
-                System.out.println("Arquivo " + arquivo + " não encontrado!");
-                return null;
-            }
+        if (!existe(arquivo)) {
+            System.out.println("[SaveManager] Arquivo " + arquivo + " não encontrado! Iniciando novo jogo.");
+            return null;
+        }
 
-            String conteudoJson = new String(Files.readAllBytes(Paths.get(arquivo)));
-            String textoLimpo = conteudoJson.replaceAll("[\\{\\}\"\\s]", "");
+        try {
+            // 1. Lê o arquivo como texto e carrega no Properties
+            String conteudo = Files.readString(Paths.get(arquivo));
+            Properties props = new Properties();
+            props.load(new StringReader(conteudo));
 
             SaveData data = new SaveData();
-            data.mapa  = 0;
-            data.posX  = 0;
-            data.posY  = 0;
-            data.vida  = 100;
-            data.level = 1;
-            data.ouro  = 0;
-            data.inimigosDerrotados = new boolean[totalMapas][10];
 
-            String inimigosSalvos = "";
-            String[] atributos = textoLimpo.split("[:,]");
+            // 2. Extrai os dados básicos com valores padrão de segurança caso algo falte
+            data.mapa  = Integer.parseInt(props.getProperty("mapaAtual", "0"));
+            data.posX  = Double.parseDouble(props.getProperty("posicaoX", "0.0"));
+            data.posY  = Double.parseDouble(props.getProperty("posicaoY", "0.0"));
+            data.vida  = Integer.parseInt(props.getProperty("vidaPlayer", "100"));
+            data.level = Integer.parseInt(props.getProperty("levelPlayer", "1"));
+            data.ouro  = Integer.parseInt(props.getProperty("ouroPlayer", "0"));
 
-            for (int i = 0; i < atributos.length; i++) {
-                switch (atributos[i]) {
-                    case "mapaAtual"     -> data.mapa  = Integer.parseInt(atributos[i + 1]);
-                    case "posicaoX"      -> data.posX  = Double.parseDouble(atributos[i + 1]);
-                    case "posicaoY"      -> data.posY  = Double.parseDouble(atributos[i + 1]);
-                    case "vidaPlayer"    -> data.vida  = Integer.parseInt(atributos[i + 1]);
-                    case "levelPlayer"   -> data.level = Integer.parseInt(atributos[i + 1]);
-                    case "ouroPlayer"    -> data.ouro  = Integer.parseInt(atributos[i + 1]);
-                    case "inimigosMortos" -> inimigosSalvos =
-                        textoLimpo.substring(textoLimpo.indexOf("inimigosMortos:") + 15);
-                }
-            }
-
+            // 3. Reconstrói a matriz de inimigos derrotados
+            // Assume 10 inimigos por mapa como padrão, ajustável conforme sua necessidade
+            data.inimigosDerrotados = new boolean[totalMapas][10]; 
+            
+            String inimigosSalvos = props.getProperty("inimigosMortos", "");
+            
             if (!inimigosSalvos.isEmpty()) {
                 String[] mapasString = inimigosSalvos.split(";");
-                for (int i = 0; i < mapasString.length; i++) {
+                // Garante que não vai estourar o limite de mapas se o save for antigo
+                int mapasLimite = Math.min(mapasString.length, totalMapas); 
+                
+                for (int i = 0; i < mapasLimite; i++) {
                     String[] inims = mapasString[i].split(",");
-                    for (int j = 0; j < inims.length; j++) {
+                    int inimigosLimite = Math.min(inims.length, data.inimigosDerrotados[i].length);
+                    
+                    for (int j = 0; j < inimigosLimite; j++) {
                         data.inimigosDerrotados[i][j] = Boolean.parseBoolean(inims[j]);
                     }
                 }
             }
 
-            System.out.println("Jogo carregado de " + arquivo + "!");
+            System.out.println("[SaveManager] Jogo carregado com sucesso de " + arquivo + "!");
             return data;
 
         } catch (Exception e) {
-            System.err.println("Erro ao carregar o jogo: " + e.getMessage());
+            System.err.println("[SaveManager] O arquivo de save está corrompido ou em formato inválido.");
+            e.printStackTrace();
             return null;
         }
     }
 
-    /** Retorna true se o arquivo de save existe. */
+    /** Retorna true se o arquivo de save existe no disco local. */
     public static boolean existe(String arquivo) {
         return Files.exists(Paths.get(arquivo));
     }

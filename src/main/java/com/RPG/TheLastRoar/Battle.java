@@ -30,15 +30,42 @@ public class Battle {
         if(inBattle) return;
         inBattle = true;
         
-        // --- FUNDO E SPRITES ---
-        ImageView bg = new ImageView(new Image(Battle.class.getResource("/images/battlebg2.png").toExternalForm()));
+        // --- FUNDO E SPRITES (CORRIGIDO COM TRY-CATCH) ---
+        ImageView bg = new ImageView();
+        try {
+            var bgUrl = Battle.class.getResource("/images/battlebg2.png");
+            if (bgUrl != null) {
+                bg.setImage(new Image(bgUrl.toExternalForm()));
+            } else {
+                System.out.println("⚠️ AVISO: Fundo de batalha não encontrado! (/images/battlebg2.png)");
+            }
+        } catch (Exception ex) {
+            System.err.println("Erro ao carregar fundo da batalha: " + ex.getMessage());
+        }
         bg.fitWidthProperty().bind(stage.widthProperty());
         bg.fitHeightProperty().bind(stage.heightProperty());
 
-        ImageView pImg = new ImageView(playerChar.getBattleSprite());
+        ImageView pImg = new ImageView();
+        try {
+            if (playerChar.getBattleSprite() != null) {
+                pImg.setImage(playerChar.getBattleSprite());
+            }
+        } catch (Exception ex) {
+            System.out.println("⚠️ AVISO: Sprite do jogador com problemas.");
+        }
         pImg.setFitWidth(200); pImg.setPreserveRatio(true);
         
-        ImageView eImg = new ImageView(new Image(Battle.class.getResource(monstro.getBattleImagePath()).toExternalForm()));
+        ImageView eImg = new ImageView();
+        try {
+            var eUrl = Battle.class.getResource(monstro.getBattleImagePath());
+            if (eUrl != null) {
+                eImg.setImage(new Image(eUrl.toExternalForm()));
+            } else {
+                System.out.println("⚠️ AVISO: Sprite do monstro não encontrado: " + monstro.getBattleImagePath());
+            }
+        } catch (Exception ex) {
+            System.err.println("Erro ao carregar sprite do monstro: " + ex.getMessage());
+        }
         eImg.setFitWidth(200); eImg.setPreserveRatio(true);
 
         // --- PAINÉIS DE STATUS ---
@@ -215,7 +242,7 @@ public class Battle {
         gameOverScreen.setStyle("-fx-background-color: rgba(0, 0, 0, 0.85);"); 
         gameOverScreen.setOpacity(0); 
 
-        Label deathText = new Label("Se fudeu");
+        Label deathText = new Label("Game Over");
         deathText.setStyle("-fx-text-fill: #ff0000; -fx-font-size: 100px; -fx-font-weight: bold; -fx-font-family: 'Impact', 'Segoe UI', sans-serif; -fx-effect: dropshadow(gaussian, rgba(255,0,0,0.5), 20, 0.5, 0, 0);");
 
         Button menuBtn = new Button("Voltar para o Menu");

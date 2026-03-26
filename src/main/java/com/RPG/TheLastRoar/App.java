@@ -17,8 +17,6 @@ import javafx.util.Duration;
 
 /**
  * Classe principal do jogo "The Last Roar".
- * Responsabilidade: orquestrar os subsistemas (HUD, Pausa, Save, Inimigos, Timers).
- * Lógica de negócio específica fica em cada manager dedicado.
  */
 public class App extends javafx.application.Application {
 
@@ -49,11 +47,10 @@ public class App extends javafx.application.Application {
     private final int    spriteWidth   = 128;
     private final int    spriteHeight  = 128;
     private final double personagemTamanhoTela = 80;
+    
     // ---- Animação dos inimigos ----
     private int  enemyFrame         = 0;
     private long lastEnemyFrameTime = 0;
-    private final int enemySpriteWidth  = 128;
-    private final int enemySpriteHeight = 128;
 
     // ---- Teclas de movimento ----
     private static boolean up, down, left, right;
@@ -89,11 +86,22 @@ public class App extends javafx.application.Application {
     @Override
     public void start(Stage stage) {
         StackPane menuLayout = StartScreen.createLayout(
-            () -> iniciarJogo(stage, null),
+            () -> IntroScreen.play(stage, cenaMestra, () -> iniciarJogo(stage, null)), 
             () -> iniciarJogo(stage, StartScreen.getUltimoSave()),
             (slotName) -> iniciarJogo(stage, slotName)
         );
+        try {
+        // Carrega a imagem do ícone (recomenda-se 32x32 ou 64x64 pixels)
+        Image icon = new Image(getClass().getResourceAsStream("/images/logo.png"));
+        
+        // Define o ícone da janela e da barra de tarefas
+        stage.getIcons().add(icon);
+    } catch (Exception e) {
+        System.out.println("Não foi possível carregar o ícone: " + e.getMessage());
+        }
 
+        stage.setTitle("The Last Roar");
+        stage.setScene(cenaMestra);
         cenaMestra = new Scene(menuLayout, 800, 600);
         stage.setTitle("The Last Roar");
         stage.setScene(cenaMestra);
@@ -113,7 +121,7 @@ public class App extends javafx.application.Application {
             screenW = screenBounds.getWidth();
             screenH = screenBounds.getHeight();
 
-            // Mapa
+            // Mapa padrão
             mapView = new ImageView(
                 new Image(getClass().getResource("/images/mapa_padrao.png").toExternalForm())
             );
@@ -130,14 +138,11 @@ public class App extends javafx.application.Application {
             );
 
             playerView = new ImageView(player.getSprite());
-            // O corte (Viewport) usa o tamanho real da imagem (256)
             playerView.setViewport(new Rectangle2D(0, 0, spriteWidth, spriteHeight));
-            
-            // O tamanho visual (Fit) usa o tamanho que você quer na tela
             playerView.setFitWidth(personagemTamanhoTela);
             playerView.setFitHeight(personagemTamanhoTela);
             
-            // Ajuste da posição central para considerar o novo tamanho
+            // Posição inicial
             playerView.setX((screenW / 2) - (personagemTamanhoTela / 2));
             playerView.setY(screenH - personagemTamanhoTela - 20);
             gameRoot.getChildren().add(playerView);
@@ -146,20 +151,20 @@ public class App extends javafx.application.Application {
             inimigosDerrotados = new boolean[LISTA_MAPAS.length][10];
             enemyManager = new EnemyManager(gameRoot, screenW, screenH, inimigosDerrotados);
 
-            // Save ou novo jogo
-            // No App.java, dentro de carregarDeJson ou antes de chamá-lo
-            if (this.hudManager != null) {
-                this.hudManager.atualizar(player);
-            } else {
-                // Caso o HUD ainda não exista, apenas carregue os dados 
-                // e deixe para atualizar o HUD quando ele for criado.
-                System.out.println("Aviso: HudManager ainda não inicializado.");
-            }
-
             // Subsistemas de UI
             hudManager = new HudManager(stage);
-            hudManager.atualizar(player);
-
+            
+            // VERIFICA SE DEVE CARREGAR O SAVE OU INICIAR NOVO JOGO
+            if (saveFile != null) {
+                // Se o jogador selecionou um save, carrega os dados dele!
+                carregarDeJson(saveFile, true);
+            } else {
+                // Novo jogo: Configura os inimigos para o primeiro mapa (0)
+                indiceMapa = 0;
+                enemyManager.configurarParaMapa(indiceMapa);
+                hudManager.atualizar(player);
+            }
+            System.out.println("ALERTA: O jogo está recriando os monstros agora!");
             pauseMenu = new PauseMenu(
                 this::togglePause,
                 () -> salvarSlot("save1.json"),
@@ -227,7 +232,8 @@ public class App extends javafx.application.Application {
 
         Stage stage = (Stage) cenaMestra.getWindow();
         StackPane menuLayout = StartScreen.createLayout(
-            () -> iniciarJogo(stage, null),
+            // CORREÇÃO AQUI: Garante que clicar em novo jogo a partir do menu principal também chame a Intro!
+            () -> IntroScreen.play(stage, cenaMestra, () -> iniciarJogo(stage, null)),
             () -> iniciarJogo(stage, StartScreen.getUltimoSave()),
             (slotName) -> iniciarJogo(stage, slotName)
         );
@@ -262,7 +268,7 @@ public class App extends javafx.application.Application {
     }
 
     // ==========================================
-    // SAVE / LOAD (delegam ao SaveManager)
+    // SAVE / LOAD 
     // ==========================================
 
     private void salvarSlot(String arquivo) {
@@ -271,7 +277,7 @@ public class App extends javafx.application.Application {
             playerView.getX(), playerView.getY(),
             player, inimigosDerrotados
         );
-        togglePause();
+        togglePause(); // Retorna ao jogo após salvar
     }
 
     private void carregarDeJson(String arquivo, boolean isInitialLoad) {
@@ -279,11 +285,17 @@ public class App extends javafx.application.Application {
         if (data == null) return;
 
         indiceMapa = data.mapa;
-        System.arraycopy(data.inimigosDerrotados, 0, inimigosDerrotados, 0, inimigosDerrotados.length);
+        
+        // CORREÇÃO AQUI: Loop para copiar os dados da matriz 2D de forma segura e profunda!
+        for (int i = 0; i < data.inimigosDerrotados.length; i++) {
+            System.arraycopy(data.inimigosDerrotados[i], 0, inimigosDerrotados[i], 0, data.inimigosDerrotados[i].length);
+        }
 
         mapView.setImage(
             new Image(getClass().getResource("/images/" + LISTA_MAPAS[indiceMapa]).toExternalForm())
         );
+        
+        // Atualiza os inimigos no mapa baseando-se na nova matriz
         enemyManager.configurarParaMapa(indiceMapa);
 
         playerView.setX(data.posX);
@@ -292,8 +304,13 @@ public class App extends javafx.application.Application {
         player.setNivel(data.level);
         player.setCoin(data.ouro);
 
-        if (!isInitialLoad) togglePause();
-        hudManager.atualizar(player);
+        if (!isInitialLoad) {
+            togglePause(); // Despausa o jogo se o save foi carregado pelo menu de pausa
+        }
+        
+        if (hudManager != null) {
+            hudManager.atualizar(player);
+        }
     }
 
     // ==========================================
@@ -344,26 +361,31 @@ public class App extends javafx.application.Application {
     // ==========================================
 
     public void resumeTimers() {
-        resetMovement();
-
-        if (monstroEmBatalhaIndex != -1) {
-            Monsters monstro = enemyManager.getMonstro(monstroEmBatalhaIndex);
-            if (monstro.getLife() <= 0) {
-                enemyManager.removerInimigo(monstroEmBatalhaIndex);
-            }
-            monstroEmBatalhaIndex = -1;
-        }
-
-        FadeTransition ft = new FadeTransition(Duration.millis(500), mainLayout);
-        ft.setFromValue(0);
-        ft.setToValue(1);
-        ft.play();
-
-        playerMovement.start();
-        if (!enemyManager.isEmpty()) enemyAI.start();
-
-        hudManager.atualizar(player);
+    // 1. Remove o monstro ANTES de qualquer coisa
+    if (monstroEmBatalhaIndex != -1) {
+        enemyManager.removerInimigo(monstroEmBatalhaIndex);
+        monstroEmBatalhaIndex = -1;
     }
+
+    // 2. Limpa as teclas pressionadas (evita que ele saia andando sozinho)
+    resetMovement();
+    
+    // 3. Sincroniza o tempo para o AnimationTimer não "pular"
+    lastFrameTime = System.nanoTime();
+
+    // 4. Garante que o layout do mapa está visível e tem o FOCO do teclado
+    mainLayout.setOpacity(1.0);
+    Platform.runLater(() -> {
+        mainLayout.requestFocus(); // Sem isso, o boneco não anda!
+        System.out.println("Teclado reativado.");
+    });
+
+    // 5. Reinicia os motores do jogo
+    playerMovement.start();
+    if (!enemyManager.isEmpty()) {
+        enemyAI.start();
+    }
+}
 
     // ==========================================
     // TIMERS DE ANIMAÇÃO
@@ -428,9 +450,9 @@ public class App extends javafx.application.Application {
                     FadeTransition ft = new FadeTransition(Duration.millis(500), mainLayout);
                     ft.setFromValue(1);
                     ft.setToValue(0);
-ft.setOnFinished(e ->
-    Battle.startBattle(stage, cenaMestra, player, monstro, playerView, ev, App.this, mainLayout)
-);
+                    ft.setOnFinished(e ->
+                        Battle.startBattle(stage, cenaMestra, player, monstro, playerView, ev, App.this, mainLayout)
+                    );
                     ft.play();
                 }
             }
