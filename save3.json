@@ -1,9 +1,0 @@
-#Save Data - The Last Roar
-#Thu Mar 26 16:22:59 BRT 2026
-vidaPlayer=100
-posicaoX=4.0
-mapaAtual=2
-posicaoY=341.0
-inimigosMortos=false,false,false,false,false,false,true,false,false,false;false,true,false,false,false,false,false,false,false,false;true,false,false,false,false,false,false,false,false,false
-levelPlayer=4
-ouroPlayer=0
