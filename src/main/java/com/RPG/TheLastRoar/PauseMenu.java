@@ -16,375 +16,221 @@ import javafx.util.Duration;
 
 /**
  * ============================================================
- * PauseMenu.java — Menu de pausa estilo "Ruined King"
+ * PauseMenu.java — Menu de pausa
  * ============================================================
- *
- * VISUAL: Overlay escuro semitransparente sobre o jogo +
- *         título "PAUSADO" em dourado + lista vertical de
- *         opções idêntica ao StartScreen (seta ciano + hover).
- *
- * ESTRUTURA DO LAYOUT (camadas no StackPane do App):
- *
- *   ┌──────────────────────────────────────┐
- *   │  [JOGO — visível mas escurecido]     │  ← overlay rgba(0,0,0,0.75)
- *   │                                      │
- *   │  ── PAUSADO ───────────────────────  │  ← título + linha decorativa
- *   │                                      │
- *   │   › VOLTAR AO JOGO                   │  ← item ativo (ciano)
- *   │     SALVAR JOGO                      │
- *   │       [Slot 1] [Slot 2] [Slot 3]     │  ← sub-slots recolhidos
- *   │     CARREGAR JOGO                    │
- *   │       [Slot 1] [Slot 2] [Slot 3]     │
- *   │     SAIR PARA O MENU                 │
- *   └──────────────────────────────────────┘
- *
- * MUDANÇAS em relação à versão anterior:
- *   - Removidos botões coloridos (verde/azul/laranja/vermelho)
- *   - Adotada a paleta monocromática ciano/escuro do Ruined King
- *   - Animação de fade ao expandir/recolher sub-slots
- *   - Overlay mais sólido (0.75 em vez de 0.8, com leve blur visual)
  */
 public class PauseMenu {
 
-    // ─── Referências aos botões de Load (para habilitar/desabilitar) ──────────
-    private Button btnLoadSlot1;
-    private Button btnLoadSlot2;
-    private Button btnLoadSlot3;
+    // Nome da família da sua fonte customizada
+    private static final String FONT_PIXEL = "Press Start 2P";
 
-    // ─── Layout raiz do menu de pausa ─────────────────────────────────────────
-    private final VBox layout;
+    private VBox layout;
+    private Button btnLoad1, btnLoad2, btnLoad3; // Guardamos para atualizar o estado de disable
 
-    // ─── Callbacks injetados pelo App ─────────────────────────────────────────
-    private final Runnable onResume;
-    private final Runnable onSaveSlot1;
-    private final Runnable onSaveSlot2;
-    private final Runnable onSaveSlot3;
-    private final Runnable onLoadSlot1;
-    private final Runnable onLoadSlot2;
-    private final Runnable onLoadSlot3;
-    private final Runnable onExit;
+    public PauseMenu(Runnable onResume,
+                     Runnable onSave1, Runnable onSave2, Runnable onSave3,
+                     Runnable onLoad1, Runnable onLoad2, Runnable onLoad3,
+                     Runnable onMainMenu) {
 
-    // ─── Paleta (igual ao StartScreen para consistência) ─────────────────────
-    private static final Color COR_TEXTO_NORMAL   = Color.web("#D8D0C0");
-    private static final Color COR_TEXTO_DISABLED = Color.web("#555040");
+        layout = new VBox(0);
+        layout.setAlignment(Pos.CENTER_LEFT);
+        // Padding esquerdo para não ficar colado na borda
+        layout.setPadding(new Insets(0, 0, 0, 120));
 
-    // =========================================================================
-    // CONSTRUTOR
-    // =========================================================================
+        // Fundo escuro semitransparente para cobrir o jogo
+        layout.setStyle("-fx-background-color: rgba(0, 0, 0, 0.75);");
+        layout.setVisible(false);
 
-    /**
-     * Constrói o PauseMenu injetando todos os callbacks.
-     * O layout resultante deve ser adicionado ao StackPane do App.
-     */
-    public PauseMenu(
-            Runnable onResume,
-            Runnable onSaveSlot1, Runnable onSaveSlot2, Runnable onSaveSlot3,
-            Runnable onLoadSlot1, Runnable onLoadSlot2, Runnable onLoadSlot3,
-            Runnable onExit) {
-
-        this.onResume    = onResume;
-        this.onSaveSlot1 = onSaveSlot1;
-        this.onSaveSlot2 = onSaveSlot2;
-        this.onSaveSlot3 = onSaveSlot3;
-        this.onLoadSlot1 = onLoadSlot1;
-        this.onLoadSlot2 = onLoadSlot2;
-        this.onLoadSlot3 = onLoadSlot3;
-        this.onExit      = onExit;
-
-        this.layout = construir();
-    }
-
-    // =========================================================================
-    // MONTAGEM DO LAYOUT
-    // =========================================================================
-
-    /**
-     * Constrói e retorna o VBox principal do menu de pausa.
-     * Este VBox é invisível por padrão (setVisible(false) no App).
-     */
-    private VBox construir() {
-        // ── VBox raiz: ocupa toda a tela (via StackPane) ───────────────────────
-        VBox menu = new VBox(0);
-        menu.setAlignment(Pos.CENTER_LEFT);
-
-        // Overlay escuro semitransparente — deixa o jogo visível ao fundo
-        menu.setStyle("-fx-background-color: rgba(0, 0, 0, 0.76);");
-        menu.setVisible(false);
-
-        // Painel interno com o conteúdo real (título + botões)
-        // Deslocado para a esquerda como no Ruined King
-        VBox painel = new VBox(0);
-        painel.setAlignment(Pos.CENTER_LEFT);
-        painel.setPadding(new Insets(0, 0, 0, 120)); // margem esquerda
-
-        // ── Título "PAUSADO" ──────────────────────────────────────────────────
+        // ── TÍTULO ────────────────────────────────────────────────────────
         Text titulo = new Text("PAUSADO");
-        titulo.setFont(Font.font("Palatino Linotype", FontWeight.BOLD, 52));
+        titulo.setFont(Font.font(FONT_PIXEL, FontWeight.NORMAL, 28)); // Ajustado para pixel font
         titulo.setFill(Color.web("#F0E6C0"));
 
-        DropShadow sombraTitulo = new DropShadow();
-        sombraTitulo.setColor(Color.web("#C8A000", 0.8));
-        sombraTitulo.setRadius(24);
-        sombraTitulo.setSpread(0.12);
-        titulo.setEffect(sombraTitulo);
+        DropShadow sombra = new DropShadow();
+        sombra.setColor(Color.web("#C8A000", 0.8));
+        sombra.setRadius(24);
+        sombra.setSpread(0.12);
+        titulo.setEffect(sombra);
 
-        VBox.setMargin(titulo, new Insets(0, 0, 6, 0));
-        painel.getChildren().add(titulo);
+        VBox.setMargin(titulo, new Insets(0, 0, 12, 0));
+        layout.getChildren().add(titulo);
 
-        // ── Linha decorativa dourada ──────────────────────────────────────────
-        Line separador = new Line(0, 0, 260, 0);
+        // ── LINHA DECORATIVA ──────────────────────────────────────────────
+        Line separador = new Line(0, 0, 240, 0);
         separador.setStroke(Color.web("#B8960C", 0.6));
         separador.setStrokeWidth(1.0);
-        VBox.setMargin(separador, new Insets(4, 0, 28, 0));
-        painel.getChildren().add(separador);
+        VBox.setMargin(separador, new Insets(4, 0, 30, 0));
+        layout.getChildren().add(separador);
 
-        // ── Botão: VOLTAR AO JOGO ─────────────────────────────────────────────
-        Button btnVoltar = criarBotaoMenu("VOLTAR AO JOGO", true);
-        btnVoltar.setOnAction(e -> onResume.run());
-        painel.getChildren().add(btnVoltar);
+        // ── OPÇÕES PRINCIPAIS ─────────────────────────────────────────────
 
-        // ── Botão: SALVAR JOGO + sub-slots ────────────────────────────────────
-        HBox boxSalvar = criarBoxSlotsSalvar();
-        boxSalvar.setVisible(false);
+        Button btnResume = criarBotaoMenu("VOLTAR AO JOGO", "#00E5E5");
+        btnResume.setOnAction(e -> onResume.run());
+        VBox.setMargin(btnResume, new Insets(0, 0, 10, 0));
+        layout.getChildren().add(btnResume);
 
-        Button btnSalvar = criarBotaoMenu("SALVAR JOGO", false);
-        btnSalvar.setOnAction(e -> toggleVisibilidade(boxSalvar));
-        painel.getChildren().add(btnSalvar);
-        painel.getChildren().add(boxSalvar);
+        // ── SISTEMA DE SAVE ───────────────────────────────────────────────
+        HBox slotsSave = criarPainelSlots("Salvar", onSave1, onSave2, onSave3);
+        Button btnSave = criarBotaoMenu("SALVAR JOGO", "#00E5E5");
+        btnSave.setOnAction(e -> toggleVisibilidade(slotsSave));
+        
+        VBox.setMargin(btnSave, new Insets(0, 0, 4, 0));
+        VBox.setMargin(slotsSave, new Insets(0, 0, 10, 20));
+        layout.getChildren().addAll(btnSave, slotsSave);
 
-        // ── Botão: CARREGAR JOGO + sub-slots ──────────────────────────────────
-        HBox boxCarregar = criarBoxSlotsCarregar();
-        boxCarregar.setVisible(false);
+        // ── SISTEMA DE LOAD ───────────────────────────────────────────────
+        HBox slotsLoad = criarPainelSlots("Carregar", onLoad1, onLoad2, onLoad3);
+        // Pegamos as referências dos botões de load para desabilitar se o slot estiver vazio
+        btnLoad1 = (Button) slotsLoad.getChildren().get(0);
+        btnLoad2 = (Button) slotsLoad.getChildren().get(1);
+        btnLoad3 = (Button) slotsLoad.getChildren().get(2);
 
-        Button btnCarregar = criarBotaoMenu("CARREGAR JOGO", false);
-        btnCarregar.setOnAction(e -> toggleVisibilidade(boxCarregar));
-        painel.getChildren().add(btnCarregar);
-        painel.getChildren().add(boxCarregar);
+        Button btnLoad = criarBotaoMenu("CARREGAR JOGO", "#00E5E5");
+        btnLoad.setOnAction(e -> toggleVisibilidade(slotsLoad));
 
-        // ── Botão: SAIR PARA O MENU ───────────────────────────────────────────
-        Button btnSair = criarBotaoMenu("SAIR PARA O MENU", false);
-        btnSair.setOnAction(e -> onExit.run());
-        painel.getChildren().add(btnSair);
+        VBox.setMargin(btnLoad, new Insets(0, 0, 4, 0));
+        VBox.setMargin(slotsLoad, new Insets(0, 0, 30, 20));
+        layout.getChildren().addAll(btnLoad, slotsLoad);
 
-        menu.getChildren().add(painel);
-        return menu;
+        // ── MENU PRINCIPAL ────────────────────────────────────────────────
+        Button btnMenu = criarBotaoMenu("MENU PRINCIPAL", "#FF6666");
+        btnMenu.setOnAction(e -> onMainMenu.run());
+        layout.getChildren().add(btnMenu);
     }
 
     // =========================================================================
-    // HELPERS DE CRIAÇÃO DE BOTÕES
+    // CRIAÇÃO DE COMPONENTES VISUAIS
     // =========================================================================
 
     /**
-     * Cria um botão do menu de pausa no estilo Ruined King.
-     * Idêntico ao StartScreen.criarBotaoMenu().
-     *
-     * @param texto     Rótulo em caixa alta
-     * @param destaque  Se true, já começa com o visual de "selecionado" (ciano)
+     * Cria os botões principais de texto sem borda.
      */
-    private static Button criarBotaoMenu(String texto, boolean destaque) {
-        Button btn = new Button((destaque ? "›  " : "   ") + texto);
-        btn.setFont(Font.font("Segoe UI", FontWeight.NORMAL, 22));
-        btn.setPrefWidth(380);
-        btn.setPrefHeight(52);
+    private Button criarBotaoMenu(String texto, String corDestaqueHex) {
+        Button btn = new Button("  " + texto);
         btn.setAlignment(Pos.CENTER_LEFT);
+        btn.setPrefWidth(300);
+        btn.setPrefHeight(40);
 
-        // ── Estilos reutilizáveis ─────────────────────────────────────────────
-        String estiloNormal =
+        final String estNormal = 
             "-fx-background-color: transparent;" +
-            "-fx-text-fill: " + toHex(COR_TEXTO_NORMAL) + ";" +
-            "-fx-padding: 0 0 0 20;" +
+            "-fx-text-fill: #D8D0C0;" +
+            "-fx-padding: 0 0 0 10;" +
             "-fx-cursor: hand;" +
-            "-fx-border-color: transparent;" +
-            "-fx-font-size: 22px;";
+            "-fx-font-family: '" + FONT_PIXEL + "';" +
+            "-fx-font-size: 12px;";
 
-        String estiloHover =
-            "-fx-background-color: rgba(0, 210, 210, 0.15);" +
-            "-fx-text-fill: white;" +
-            "-fx-padding: 0 0 0 20;" +
+        final String estHover = 
+            "-fx-background-color: transparent;" +
+            "-fx-text-fill: " + corDestaqueHex + ";" +
+            "-fx-padding: 0 0 0 10;" +
             "-fx-cursor: hand;" +
-            "-fx-border-left-color: #00E5E5;" +
-            "-fx-border-color: transparent;" +
-            "-fx-border-width: 0 0 0 3;" +
-            "-fx-font-size: 22px;";
+            "-fx-font-family: '" + FONT_PIXEL + "';" +
+            "-fx-font-size: 12px;";
 
-        // Estado inicial
-        btn.setStyle(destaque ? estiloHover : estiloNormal);
-
-        // ── Interações de hover ───────────────────────────────────────────────
-        btn.setOnMouseEntered(e -> {
-            if (!btn.isDisabled()) {
-                btn.setStyle(estiloHover);
-                // Adiciona a seta se ainda não estiver
-                String t = btn.getText().strip().replace("›", "").strip();
-                btn.setText("›  " + t);
-                btn.setTextFill(Color.WHITE);
-            }
+        btn.setStyle(estNormal);
+        btn.setOnMouseEntered(e -> { 
+            btn.setStyle(estHover); 
+            btn.setText("> " + texto); 
         });
-
-        btn.setOnMouseExited(e -> {
-            if (!btn.isDisabled()) {
-                btn.setStyle(estiloNormal);
-                String t = btn.getText().strip().replace("›", "").strip();
-                btn.setText("   " + t);
-                btn.setTextFill(COR_TEXTO_NORMAL);
-            }
+        btn.setOnMouseExited(e -> { 
+            btn.setStyle(estNormal); 
+            btn.setText("  " + texto); 
         });
 
         return btn;
     }
 
     /**
-     * Cria o painel horizontal com os 3 botões de SALVAR (Slot 1, 2, 3).
-     * Sempre habilitados (o jogador pode sobrescrever qualquer slot).
+     * Cria um HBox contendo 3 botões (Slot 1, 2 e 3).
      */
-    private HBox criarBoxSlotsSalvar() {
-        HBox box = new HBox(12);
+    private HBox criarPainelSlots(String prefixo, Runnable acao1, Runnable acao2, Runnable acao3) {
+        HBox box = new HBox(12); // Espaçamento entre os botões
         box.setAlignment(Pos.CENTER_LEFT);
-        box.setPadding(new Insets(4, 0, 8, 64)); // indentação para indicar sub-menu
+        box.setVisible(false);
+        box.setManaged(true); // Mantém o espaço reservado para não "empurrar" o layout bruscamente
 
-        String[] labels   = {"Slot 1", "Slot 2", "Slot 3"};
-        Runnable[] acoes  = {onSaveSlot1, onSaveSlot2, onSaveSlot3};
+        Button b1 = criarBotaoSlot(prefixo + " 1", acao1);
+        Button b2 = criarBotaoSlot(prefixo + " 2", acao2);
+        Button b3 = criarBotaoSlot(prefixo + " 3", acao3);
 
-        for (int i = 0; i < 3; i++) {
-            final int idx = i;
-            Button slot = criarBotaoSlot(labels[i], true);
-            slot.setOnAction(e -> acoes[idx].run());
-            box.getChildren().add(slot);
-        }
-
+        box.getChildren().addAll(b1, b2, b3);
         return box;
     }
 
     /**
-     * Cria o painel horizontal com os 3 botões de CARREGAR (Slot 1, 2, 3).
-     * Os botões são guardados como campos para poder habilitá-los/desabilitá-los
-     * depois via {@link #atualizarBotoesLoad}.
+     * Cria um botão pequeno estilo "Slot" com borda.
      */
-    private HBox criarBoxSlotsCarregar() {
-        HBox box = new HBox(12);
-        box.setAlignment(Pos.CENTER_LEFT);
-        box.setPadding(new Insets(4, 0, 8, 64));
-
-        // Cria e guarda as referências para atualização posterior
-        btnLoadSlot1 = criarBotaoSlot("Slot 1", false); // começa desabilitado
-        btnLoadSlot2 = criarBotaoSlot("Slot 2", false);
-        btnLoadSlot3 = criarBotaoSlot("Slot 3", false);
-
-        btnLoadSlot1.setOnAction(e -> onLoadSlot1.run());
-        btnLoadSlot2.setOnAction(e -> onLoadSlot2.run());
-        btnLoadSlot3.setOnAction(e -> onLoadSlot3.run());
-
-        box.getChildren().addAll(btnLoadSlot1, btnLoadSlot2, btnLoadSlot3);
-        return box;
-    }
-
-    /**
-     * Cria um botão de slot (pequeno, estilo ciano/escuro).
-     *
-     * @param label    Texto do botão (ex: "Slot 1")
-     * @param ativo    Se true, começa habilitado com borda ciano
-     */
-    private static Button criarBotaoSlot(String label, boolean ativo) {
-        Button btn = new Button(label);
-        btn.setFont(Font.font("Segoe UI", FontWeight.NORMAL, 14));
-        btn.setDisable(!ativo);
-
-        String corBorda = ativo ? "#00E5E5" : "#443E30";
-        String corTexto = ativo ? "#C0B890" : "#443E30";
-
-        String estiloBase =
-            "-fx-background-color: rgba(0,0,0,0.4);" +
-            "-fx-border-color: " + corBorda + ";" +
+    private Button criarBotaoSlot(String texto, Runnable acao) {
+        Button btn = new Button(texto);
+        
+        final String estNormalSlot = 
+            "-fx-background-color: rgba(20, 20, 20, 0.6);" +
+            "-fx-border-color: #443E30;" +
             "-fx-border-width: 1;" +
-            "-fx-border-radius: 3;" +
-            "-fx-background-radius: 3;" +
-            "-fx-text-fill: " + corTexto + ";" +
-            "-fx-padding: 6 16;" +
-            "-fx-cursor: " + (ativo ? "hand" : "default") + ";";
+            "-fx-text-fill: #A8A090;" +
+            "-fx-padding: 6 12;" +
+            "-fx-background-radius: 4;" +
+            "-fx-border-radius: 4;" +
+            "-fx-cursor: hand;" +
+            "-fx-font-family: '" + FONT_PIXEL + "';" +
+            "-fx-font-size: 8px;";
 
-        btn.setStyle(estiloBase);
+        final String estHoverSlot = 
+            "-fx-background-color: rgba(0, 200, 200, 0.2);" +
+            "-fx-border-color: #00E5E5;" +
+            "-fx-border-width: 1;" +
+            "-fx-text-fill: #FFFFFF;" +
+            "-fx-padding: 6 12;" +
+            "-fx-background-radius: 4;" +
+            "-fx-border-radius: 4;" +
+            "-fx-cursor: hand;" +
+            "-fx-font-family: '" + FONT_PIXEL + "';" +
+            "-fx-font-size: 8px;";
 
-        if (ativo) {
-            btn.setOnMouseEntered(e -> btn.setStyle(
-                "-fx-background-color: rgba(0, 210, 210, 0.2);" +
-                "-fx-border-color: #00E5E5;" +
-                "-fx-border-width: 1;" +
-                "-fx-border-radius: 3;" +
-                "-fx-background-radius: 3;" +
-                "-fx-text-fill: white;" +
-                "-fx-padding: 6 16;" +
-                "-fx-cursor: hand;"
-            ));
-            btn.setOnMouseExited(e -> btn.setStyle(estiloBase));
-        }
+        final String estDisableSlot = 
+            "-fx-background-color: rgba(10, 10, 10, 0.4);" +
+            "-fx-border-color: #222222;" +
+            "-fx-border-width: 1;" +
+            "-fx-text-fill: #555555;" +
+            "-fx-padding: 6 12;" +
+            "-fx-background-radius: 4;" +
+            "-fx-border-radius: 4;" +
+            "-fx-font-family: '" + FONT_PIXEL + "';" +
+            "-fx-font-size: 8px;";
 
+        btn.setStyle(estNormalSlot);
+
+        btn.setOnMouseEntered(e -> { if (!btn.isDisabled()) btn.setStyle(estHoverSlot); });
+        btn.setOnMouseExited(e ->  { if (!btn.isDisabled()) btn.setStyle(estNormalSlot); });
+        
+        // Quando o botão for desabilitado/habilitado dinamicamente, atualiza o visual
+        btn.disabledProperty().addListener((obs, oldVal, isDisable) -> {
+            if (isDisable) btn.setStyle(estDisableSlot);
+            else btn.setStyle(estNormalSlot);
+        });
+
+        btn.setOnAction(e -> acao.run());
         return btn;
     }
 
     // =========================================================================
-    // API PÚBLICA
+    // CONTROLE DE ESTADO
     // =========================================================================
 
     /**
-     * Atualiza o estado visual dos botões de carregar conforme os saves existentes.
-     * Chamado pelo App antes de exibir o menu de pausa.
-     *
-     * @param slot1 true se save1.json existe
-     * @param slot2 true se save2.json existe
-     * @param slot3 true se save3.json existe
+     * Atualiza quais botões de LOAD devem estar clicáveis.
      */
-    public void atualizarBotoesLoad(boolean slot1, boolean slot2, boolean slot3) {
-        atualizarSlotLoad(btnLoadSlot1, "Slot 1", slot1);
-        atualizarSlotLoad(btnLoadSlot2, "Slot 2", slot2);
-        atualizarSlotLoad(btnLoadSlot3, "Slot 3", slot3);
+    public void atualizarBotoesLoad(boolean slot1Existe, boolean slot2Existe, boolean slot3Existe) {
+        if (btnLoad1 != null) btnLoad1.setDisable(!slot1Existe);
+        if (btnLoad2 != null) btnLoad2.setDisable(!slot2Existe);
+        if (btnLoad3 != null) btnLoad3.setDisable(!slot3Existe);
     }
 
     /**
-     * Atualiza visualmente um único botão de slot de carregamento.
-     */
-    private static void atualizarSlotLoad(Button btn, String label, boolean existe) {
-        btn.setDisable(!existe);
-        btn.setText(existe ? label : label + " (Vazio)");
-
-        String corBorda = existe ? "#00E5E5" : "#443E30";
-        String corTexto = existe ? "#C0B890" : "#443E30";
-
-        String estilo =
-            "-fx-background-color: rgba(0,0,0,0.4);" +
-            "-fx-border-color: " + corBorda + ";" +
-            "-fx-border-width: 1;" +
-            "-fx-border-radius: 3;" +
-            "-fx-background-radius: 3;" +
-            "-fx-text-fill: " + corTexto + ";" +
-            "-fx-padding: 6 16;" +
-            "-fx-cursor: " + (existe ? "hand" : "default") + ";";
-
-        btn.setStyle(estilo);
-
-        // Re-registra hover apenas se existir save
-        if (existe) {
-            btn.setOnMouseEntered(e -> btn.setStyle(
-                "-fx-background-color: rgba(0, 210, 210, 0.2);" +
-                "-fx-border-color: #00E5E5;" +
-                "-fx-border-width: 1;" +
-                "-fx-border-radius: 3;" +
-                "-fx-background-radius: 3;" +
-                "-fx-text-fill: white;" +
-                "-fx-padding: 6 16;" +
-                "-fx-cursor: hand;"
-            ));
-            btn.setOnMouseExited(e -> btn.setStyle(estilo));
-        }
-    }
-
-    /**
-     * Exibe ou esconde o menu de pausa.
-     *
-     * @param visible true = mostrar, false = esconder
+     * Exibe ou oculta o menu de pausa com animação de fade in.
      */
     public void setVisible(boolean visible) {
         if (visible) {
-            // Aparece com fade in suave
             layout.setOpacity(0);
             layout.setVisible(true);
             FadeTransition ft = new FadeTransition(Duration.millis(250), layout);
@@ -422,15 +268,5 @@ public class PauseMenu {
             ft.setToValue(1);
             ft.play();
         }
-    }
-
-    /**
-     * Converte Color JavaFX para string hex CSS.
-     */
-    private static String toHex(Color c) {
-        return String.format("#%02X%02X%02X",
-            (int)(c.getRed()   * 255),
-            (int)(c.getGreen() * 255),
-            (int)(c.getBlue()  * 255));
     }
 }

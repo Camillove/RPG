@@ -1,10 +1,19 @@
 package com.RPG.TheLastRoar;
 
 /**
- * Item.java
- * Classe base para itens do jogo
- * Todos os itens têm um nome, valor (preço) e tamanho (espaço na mochila)
- * Espadas herdam desta classe e adicionam propriedades como dano
+ * ============================================================
+ * Item.java — Classe Base para Todos os Itens do Jogo
+ * ============================================================
+ * 
+ * HIERARQUIA:
+ * Item ← Sword, Armor, Potion
+ * 
+ * RESPONSABILIDADE:
+ * - name, value, size (com validação nos setters)
+ * - Base para Inventory.java, ShopNPC.java
+ * 
+ * USAGE:
+ * new Sword("Adaga", 10, 5, "Comum", 1)  // herda Item props
  */
 public class Item {
 

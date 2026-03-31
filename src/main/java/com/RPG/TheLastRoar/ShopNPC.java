@@ -26,36 +26,23 @@ import javafx.util.Duration;
  * ============================================================
  * ShopNPC.java — NPC vendedor posicionado no mapa 0
  * ============================================================
- *
- * RESPONSABILIDADE:
- * Representa o NPC ferreiro visível no mapa 0. Quando o jogador
- * se aproxima, App.java detecta a colisão e chama abrirLoja().
- * A tela da loja é um overlay sobre o jogo (igual ao PauseMenu).
- *
- * CORREÇÃO BUG 2 — LOJA NÃO FECHAVA:
- * Causa original: ShopNPC tinha seu próprio flag estático 'lojaAberta'.
- * Se App.lojaAberta e ShopNPC.lojaAberta ficassem fora de sincronia
- * (ex: por erro de callback), a loja bloqueava permanentemente.
- *
- * Correção: O campo 'lojaAberta' foi COMPLETAMENTE REMOVIDO deste arquivo.
- * App.java é o ÚNICO responsável por gerenciar o estado da loja.
- * abrirLoja() agora é uma função pura — apenas monta a UI e chama
- * onClose quando o jogador pressiona FECHAR. Quem seta/reseta o flag
- * é exclusivamente App.verificarColisaoNPC().
- *
- * ITENS À VENDA:
- * Armas  : Adaga (10), Espada Longa (25), Katana (50)
- * Poções : Poção Pequena (5), Poção Grande (15)
  */
 public class ShopNPC {
 
+    // Nome da família da sua fonte customizada
+    private static final String FONT_PIXEL = "Press Start 2P";
+
     // ── Posição e tamanho do NPC no mapa ──────────────────────────────────
     public static final double NPC_X    = 200;
-    public static final double NPC_Y    = 100;
+    public static final double NPC_Y    = 500;
     public static final double NPC_SIZE = 70;
 
     // ── Raio de proximidade para abrir a loja ──────────────────────────────
     private static final double RAIO_COLISAO = 80;
+
+    // ── Tempo de recarga (Cooldown) ────────────────────────────────────────
+    private static final long COOLDOWN_MS = 15000; // 15 segundos em milissegundos
+    private static long ultimoFechamento = 0;      // Registra quando a loja fechou por último
 
     // =========================================================================
     // CRIAÇÃO DO SPRITE DO NPC
@@ -88,6 +75,11 @@ public class ShopNPC {
     // =========================================================================
 
     public static boolean verificarColisao(double playerX, double playerY) {
+        // Bloqueia a colisão se ainda estiver no tempo de cooldown (15 segundos)
+        if (System.currentTimeMillis() - ultimoFechamento < COOLDOWN_MS) {
+            return false;
+        }
+
         double npcCentroX  = NPC_X + NPC_SIZE / 2;
         double npcCentroY  = NPC_Y + NPC_SIZE / 2;
         double playerCentroX = playerX + 40;
@@ -135,34 +127,34 @@ public class ShopNPC {
 
         // ── Título ────────────────────────────────────────────────────────
         Text titulo = new Text("LOJA DO FERREIRO");
-        titulo.setFont(Font.font("Palatino Linotype", FontWeight.BOLD, 44));
+        titulo.setFont(Font.font(FONT_PIXEL, FontWeight.NORMAL, 26));
         titulo.setFill(Color.web("#F0E6C0"));
         DropShadow sombra = new DropShadow();
         sombra.setColor(Color.web("#C8A000", 0.8));
         sombra.setRadius(20);
         titulo.setEffect(sombra);
-        VBox.setMargin(titulo, new Insets(0, 0, 6, 0));
+        VBox.setMargin(titulo, new Insets(0, 0, 12, 0));
         painel.getChildren().add(titulo);
 
         // ── Linha decorativa ──────────────────────────────────────────────
         Line sep = new Line(0, 0, 320, 0);
         sep.setStroke(Color.web("#B8960C", 0.6));
         sep.setStrokeWidth(1.0);
-        VBox.setMargin(sep, new Insets(4, 0, 16, 0));
+        VBox.setMargin(sep, new Insets(4, 0, 24, 0));
         painel.getChildren().add(sep);
 
         // ── Ouro do jogador ───────────────────────────────────────────────
-        Label lblOuro = new Label("Ouro:  " + player.getCoin() + "  \uD83E\uDE99");
-        lblOuro.setFont(Font.font("Segoe UI", FontWeight.BOLD, 18));
+        Label lblOuro = new Label("Ouro: " + player.getCoin());
+        lblOuro.setFont(Font.font(FONT_PIXEL, FontWeight.NORMAL, 12));
         lblOuro.setTextFill(Color.GOLD);
-        VBox.setMargin(lblOuro, new Insets(0, 0, 20, 4));
+        VBox.setMargin(lblOuro, new Insets(0, 0, 24, 4));
         painel.getChildren().add(lblOuro);
 
         // ── Seção: Armas ──────────────────────────────────────────────────
         Text lblArmas = new Text("ARMAS");
-        lblArmas.setFont(Font.font("Segoe UI", FontWeight.BOLD, 13));
+        lblArmas.setFont(Font.font(FONT_PIXEL, FontWeight.NORMAL, 10));
         lblArmas.setFill(Color.web("#888070"));
-        VBox.setMargin(lblArmas, new Insets(0, 0, 8, 4));
+        VBox.setMargin(lblArmas, new Insets(0, 0, 10, 4));
         painel.getChildren().add(lblArmas);
 
         adicionarItemLoja(painel, new Sword("Adaga",       10, 5, "Comum", 2),
@@ -174,9 +166,9 @@ public class ShopNPC {
 
         // ── Seção: Poções ──────────────────────────────────────────────────
         Text lblPocoes = new Text("POÇÕES");
-        lblPocoes.setFont(Font.font("Segoe UI", FontWeight.BOLD, 13));
+        lblPocoes.setFont(Font.font(FONT_PIXEL, FontWeight.NORMAL, 10));
         lblPocoes.setFill(Color.web("#888070"));
-        VBox.setMargin(lblPocoes, new Insets(14, 0, 8, 4));
+        VBox.setMargin(lblPocoes, new Insets(16, 0, 10, 4));
         painel.getChildren().add(lblPocoes);
 
         adicionarItemLoja(painel, new Potion("Poção Pequena", 5,  1, 30),
@@ -186,7 +178,7 @@ public class ShopNPC {
 
         // ── Botão Fechar ──────────────────────────────────────────────────
         Button btnFechar = criarBotaoFechar();
-        VBox.setMargin(btnFechar, new Insets(20, 0, 0, 0));
+        VBox.setMargin(btnFechar, new Insets(24, 0, 0, 0));
         btnFechar.setOnAction(e -> onClose.run());
         painel.getChildren().add(btnFechar);
 
@@ -210,25 +202,25 @@ public class ShopNPC {
             "-fx-padding: 10 16 10 12;" +
             "-fx-background-radius: 6;"
         );
-        VBox.setMargin(linha, new Insets(0, 0, 6, 0));
+        VBox.setMargin(linha, new Insets(0, 0, 8, 0));
 
-        // Ícone do tipo
+        // Ícone do tipo (Mantido como Segoe UI Emoji para não quebrar o ícone)
         Label icone = new Label(item instanceof Sword ? "⚔" : "🧪");
-        icone.setFont(Font.font("Segoe UI Emoji", 20));
+        icone.setFont(Font.font("Segoe UI Emoji", 24));
 
         // Nome e atributo
-        VBox infoBox = new VBox(2);
+        VBox infoBox = new VBox(6);
         Label nome = new Label(item.getName());
-        nome.setFont(Font.font("Segoe UI", FontWeight.BOLD, 15));
+        nome.setFont(Font.font(FONT_PIXEL, FontWeight.NORMAL, 10));
         nome.setTextFill(Color.web("#E8DFC0"));
 
         String atributo;
-        if      (item instanceof Sword s)  atributo = "Dano: " + s.getDamage() + "  |  " + descricao;
-        else if (item instanceof Potion p) atributo = "+" + p.getHealedLife() + " HP  |  " + descricao;
+        if      (item instanceof Sword s)  atributo = "Dano: " + s.getDamage() + " | " + descricao;
+        else if (item instanceof Potion p) atributo = "+" + p.getHealedLife() + " HP | " + descricao;
         else                               atributo = descricao;
 
         Label desc = new Label(atributo);
-        desc.setFont(Font.font("Segoe UI", 12));
+        desc.setFont(Font.font(FONT_PIXEL, FontWeight.NORMAL, 7));
         desc.setTextFill(Color.web("#888070"));
         infoBox.getChildren().addAll(nome, desc);
 
@@ -237,10 +229,11 @@ public class ShopNPC {
         HBox.setHgrow(spacer, Priority.ALWAYS);
 
         // Preço
-        Label lblPreco = new Label(preco + " \uD83E\uDE99");
-        lblPreco.setFont(Font.font("Segoe UI", FontWeight.BOLD, 14));
+        Label lblPreco = new Label(preco + "G");
+        lblPreco.setFont(Font.font(FONT_PIXEL, FontWeight.NORMAL, 10));
         lblPreco.setTextFill(Color.GOLD);
-        lblPreco.setMinWidth(70);
+        lblPreco.setMinWidth(60);
+        lblPreco.setAlignment(Pos.CENTER_RIGHT);
 
         // Estilos do botão COMPRAR
         final String estNormal =
@@ -250,8 +243,10 @@ public class ShopNPC {
             "-fx-border-radius: 5;" +
             "-fx-background-radius: 5;" +
             "-fx-text-fill: #00E5E5;" +
-            "-fx-padding: 6 14;" +
-            "-fx-cursor: hand;";
+            "-fx-padding: 8 12;" +
+            "-fx-cursor: hand;" +
+            "-fx-font-family: '" + FONT_PIXEL + "';" +
+            "-fx-font-size: 8px;";
         final String estHover =
             "-fx-background-color: rgba(0,200,200,0.30);" +
             "-fx-border-color: #00E5E5;" +
@@ -259,8 +254,10 @@ public class ShopNPC {
             "-fx-border-radius: 5;" +
             "-fx-background-radius: 5;" +
             "-fx-text-fill: white;" +
-            "-fx-padding: 6 14;" +
-            "-fx-cursor: hand;";
+            "-fx-padding: 8 12;" +
+            "-fx-cursor: hand;" +
+            "-fx-font-family: '" + FONT_PIXEL + "';" +
+            "-fx-font-size: 8px;";
         final String estDisable =
             "-fx-background-color: rgba(20,20,20,0.4);" +
             "-fx-border-color: #443E30;" +
@@ -268,10 +265,11 @@ public class ShopNPC {
             "-fx-border-radius: 5;" +
             "-fx-background-radius: 5;" +
             "-fx-text-fill: #443E30;" +
-            "-fx-padding: 6 14;";
+            "-fx-padding: 8 12;" +
+            "-fx-font-family: '" + FONT_PIXEL + "';" +
+            "-fx-font-size: 8px;";
 
         Button btnComprar = new Button("COMPRAR");
-        btnComprar.setFont(Font.font("Segoe UI", FontWeight.BOLD, 13));
         btnComprar.setStyle(estNormal);
         btnComprar.setOnMouseEntered(e -> { if (!btnComprar.isDisabled()) btnComprar.setStyle(estHover); });
         btnComprar.setOnMouseExited(e ->  { if (!btnComprar.isDisabled()) btnComprar.setStyle(estNormal); });
@@ -309,7 +307,7 @@ public class ShopNPC {
 
             // Desconta as moedas e atualiza a interface
             player.removeCoin(preco);
-            lblOuro.setText("Ouro:  " + player.getCoin() + "  \uD83E\uDE99");
+            lblOuro.setText("Ouro: " + player.getCoin());
             if (hudManager != null) hudManager.atualizar(player);
 
             // Feedback visual no botão: "COMPRADO!"
@@ -322,7 +320,9 @@ public class ShopNPC {
                 "-fx-border-radius: 5;" +
                 "-fx-background-radius: 5;" +
                 "-fx-text-fill: #00CC66;" +
-                "-fx-padding: 6 14;"
+                "-fx-padding: 8 12;" +
+                "-fx-font-family: '" + FONT_PIXEL + "';" +
+                "-fx-font-size: 8px;"
             );
 
             // Restaura o botão após 1.5s
@@ -349,8 +349,7 @@ public class ShopNPC {
     // =========================================================================
 
     private static Button criarBotaoFechar() {
-        Button btn = new Button("   FECHAR");
-        btn.setFont(Font.font("Segoe UI", FontWeight.NORMAL, 20));
+        Button btn = new Button("  FECHAR");
         btn.setPrefWidth(240);
         btn.setPrefHeight(48);
         btn.setAlignment(Pos.CENTER_LEFT);
@@ -361,7 +360,9 @@ public class ShopNPC {
             "-fx-padding: 0 0 0 20;" +
             "-fx-cursor: hand;" +
             "-fx-border-color: transparent;" +
-            "-fx-font-size: 20px;";
+            "-fx-font-family: '" + FONT_PIXEL + "';" +
+            "-fx-font-size: 14px;";
+            
         final String estHover =
             "-fx-background-color: rgba(0,210,210,0.15);" +
             "-fx-text-fill: white;" +
@@ -369,11 +370,12 @@ public class ShopNPC {
             "-fx-cursor: hand;" +
             "-fx-border-width: 0 0 0 3;" +
             "-fx-border-color: transparent;" +
-            "-fx-font-size: 20px;";
+            "-fx-font-family: '" + FONT_PIXEL + "';" +
+            "-fx-font-size: 14px;";
 
         btn.setStyle(estNormal);
-        btn.setOnMouseEntered(e -> { btn.setStyle(estHover);  btn.setText("›  FECHAR"); });
-        btn.setOnMouseExited(e ->  { btn.setStyle(estNormal); btn.setText("   FECHAR"); });
+        btn.setOnMouseEntered(e -> { btn.setStyle(estHover);  btn.setText("> FECHAR"); });
+        btn.setOnMouseExited(e ->  { btn.setStyle(estNormal); btn.setText("  FECHAR"); });
         return btn;
     }
 
@@ -382,6 +384,9 @@ public class ShopNPC {
     // =========================================================================
 
     private static void fechar(StackPane mainLayout, Runnable onClose) {
+        // Grava o horário atual exato para iniciar a contagem do cooldown
+        ultimoFechamento = System.currentTimeMillis();
+
         if (mainLayout.getChildren().isEmpty()) {
             onClose.run();
             return;

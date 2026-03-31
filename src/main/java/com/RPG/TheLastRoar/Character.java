@@ -6,14 +6,21 @@ import java.util.Random;
 import javafx.scene.image.Image;
 
 /**
- * Character.java
- * Representa o personagem do jogador.
- * Controla vida, XP, level, inventário, armas e resistência.
+ * ============================================================
+ * Character.java — Personagem principal do jogador
+ * ============================================================
  *
- * ALTERAÇÕES NESTA VERSÃO:
- * - Adicionado campo `equippedArmor` (Armor) — armazena a armadura equipada
- * - Adicionado `getEquippedArmor()` e `setEquippedArmor()` para o InventoryScreen
- * - O método `getResistance()` agora soma a resistência base com a da armadura equipada
+ * RESPONSABILIDADE:
+ * Controla TODAS as propriedades do herói: vida, XP, level, inventário,
+ * equipamentos (sword/armor), economia (moedas), combate.
+ *
+ * SISTEMA DE RESISTÊNCIA ATUALIZADO:
+ * - resistance (base) + equippedArmor.getResistance() = total
+ * - Usado em Battle.java, HudManager.java, ShopNPC.java
+ *
+ * DEPENDENCIES:
+ * - Inventory.java, Sword.java, Armor.java, Monsters.java (combate)
+ * - HudManager.java (display), Battle.java (turnos)
  */
 public class Character {
 
