@@ -8,6 +8,7 @@ import javafx.geometry.Insets;
 import javafx.geometry.Pos;
 import javafx.geometry.Rectangle2D;
 import javafx.scene.Scene;
+import javafx.scene.control.Button;
 import javafx.scene.control.Label;
 import javafx.scene.image.Image;
 import javafx.scene.image.ImageView;
@@ -74,8 +75,9 @@ public class App extends javafx.application.Application {
 
     private static boolean up, down, left, right;
 
-    private boolean isPaused   = false;
-    private boolean lojaAberta = false;
+    private boolean isPaused        = false;
+    private boolean lojaAberta      = false;
+    private boolean inventarioAberto = false; // Impede abrir inventario duas vezes
 
     private final String[] LISTA_MAPAS = {"mapa_padrao.png", "mapa_padrao2.png", "mapa_padrao3.png"};
     private int indiceMapa = 0;
